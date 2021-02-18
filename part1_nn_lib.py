@@ -226,8 +226,9 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        self._W = None
-        self._b = None
+        # initialise to random variables first, will be trained later on
+        self._W = xavier_init(size=(n_in, n_out))
+        self._b = xavier_init(size=(1, n_out))
 
         self._cache_current = None
         self._grad_W_current = None
@@ -253,7 +254,9 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        self._cache_current = x
+        return np.matmul(x, self._W) + self._b
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -270,13 +273,16 @@ class LinearLayer(Layer):
             grad_z {np.ndarray} -- Gradient array of shape (batch_size, n_out).
 
         Returns:
-            {np.ndarray} -- Array containing gradient with repect to layer
+            {np.ndarray} -- Array containing gradient with respect to layer
                 input, of shape (batch_size, n_in).
         """
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        self._grad_W_current = np.matmul(self._cache_current.T, grad_z)
+        self._grad_b_current = grad_z
+        return np.matmul(grad_z, self._W.T)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -293,7 +299,9 @@ class LinearLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        self._W = self._W - learning_rate * self.grad_W_current
+        self._b = self._b - learning_rate * self.grad_b_current
 
         #######################################################################
         #                       ** END OF YOUR CODE **
