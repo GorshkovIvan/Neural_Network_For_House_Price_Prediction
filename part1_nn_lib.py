@@ -120,7 +120,11 @@ class SigmoidLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+        output = 1.0 / (1.0 + np.exp(-x))
+        self._cache_current = output
+
+        return output
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -143,7 +147,13 @@ class SigmoidLayer(Layer):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+
+
+        sigmoid_gradient = self._cache_current * (1 - self._cache_current)
+
+        gradient = sigmoid_gradient * grad_z
+
+        return gradient
 
         #######################################################################
         #                       ** END OF YOUR CODE **
