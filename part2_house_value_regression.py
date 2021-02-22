@@ -2,6 +2,18 @@ import torch
 import pickle
 import numpy as np
 import pandas as pd
+from sklearn import preprocessing
+
+class Network(nn.Module):
+    def __init__(self):
+        super(Network, self).__init__()
+        self.fc1 = nn.Linear(self.input_size, self.hiddenLayer1_size)
+        self.fc2 = nn.Linear(self.hiddenLayer1_size, self.output_size)
+
+    def forward(self, x):
+        x = F.sigmoid(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        return x
 
 class Regressor():
 
@@ -26,9 +38,15 @@ class Regressor():
         # Replace this code with your own
         X, _ = self._preprocessor(x, training = True)
         self.input_size = X.shape[1]
-        self.output_size = 1
-        self.nb_epoch = nb_epoch 
-        return
+        self.output_size = X.shape[0]
+        self.hiddenLayer_size = None
+
+        # Our code
+        self.model = None
+        self.nb_epoch = nb_epoch
+        self.learning_rate = learning_rate
+        self.batch_size = batch_size
+        self.device = device
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -59,6 +77,14 @@ class Regressor():
 
         # Replace this code with your own
         # Return preprocessed x and y, return None for y if it was None
+
+        # our code
+
+        lb = preprocessing.OneHotEncoder()
+        ocean_prox = x['ocean_proximity']
+        ocean_prox = ocean_prox.to_numpy()
+        lb.fit(ocean_prox)
+
         return x, (y if isinstance(y, pd.DataFrame) else None)
 
         #######################################################################
@@ -197,7 +223,9 @@ def example_main():
     # Use pandas to read CSV data as it contains various object types
     # Feel free to use another CSV reader tool
     # But remember that LabTS tests take Pandas Dataframe as inputs
-    data = pd.read_csv("housing.csv") 
+    data = pd.read_csv("housing.csv")
+
+
 
     # Spliting input and output
     x_train = data.loc[:, data.columns != output_label]
