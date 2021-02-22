@@ -1,4 +1,7 @@
 import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
 import pickle
 import numpy as np
 import pandas as pd
@@ -17,7 +20,7 @@ class Network(nn.Module):
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch = 1000):
+    def __init__(self, x, nb_epoch=100, learning_rate=0.001, batch_size=100, device="cpu"):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -36,7 +39,7 @@ class Regressor():
         #######################################################################
 
         # Replace this code with your own
-        X, _ = self._preprocessor(x, training = True)
+        X, _ = self._preprocessor(x, training=True)
         self.input_size = X.shape[1]
         self.output_size = X.shape[0]
         self.hiddenLayer_size = None
@@ -52,7 +55,7 @@ class Regressor():
         #                       ** END OF YOUR CODE **
         #######################################################################
 
-    def _preprocessor(self, x, y = None, training = False):
+    def _preprocessor(self, x, y=None, training=False):
         """ 
         Preprocess input of the network.
           
@@ -109,9 +112,34 @@ class Regressor():
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+        
+        model = Network().to(self.device)
+        criterion = nn.L1Loss()
+        optimiser = optim.SGD(model.parameters(), lr=self.learning_rate)
 
-        X, Y = self._preprocessor(x, y = y, training = True) # Do not forget
-        return self
+        # His code
+        X, Y = self._preprocessor(x, y=y, training=True)  # Do not forget
+
+        # Our code
+        for epoch in range(self.nb_epoch):
+            train_loader = torch.utils.data.DataLoader((X, Y), batch_size=self.batch_size, shuffle=True)
+
+            for i, (inputs, labels) in enumerate(train_loader, 0):
+                # Forward pass
+                optimiser.zero_grad()
+                output = model(inputs)
+
+                # Calculate Loss
+                loss = criterion(output, labels)
+                loss.backward()
+
+                # Update parameters
+                optimiser.step()
+                print(loss.item())
+
+        self.model = model
+
+        #return self
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -120,7 +148,7 @@ class Regressor():
             
     def predict(self, x):
         """
-        Ouput the value corresponding to an input x.
+        Output the value corresponding to an input x.
 
         Arguments:
             x {pd.DataFrame} -- Raw input array of shape 
@@ -135,8 +163,14 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, _ = self._preprocessor(x, training = False) # Do not forget
-        pass
+        X, _ = self._preprocessor(x, training=False) # Do not forget
+
+        test_loader = torch.utils.data.DataLoader((X, Y), batch_size=self.batch_size, shuffle=True)
+
+        with torch.no_grad():
+            for inputs, labels in test_loader:
+                outputs = self.model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -160,8 +194,20 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, Y = self._preprocessor(x, y = y, training = False) # Do not forget
-        return 0 # Replace this code with your own
+        X, Y = self._preprocessor(x, y = y, training=False) # Do not forget
+
+        test_loader = torch.utils.data.DataLoader((X, Y), batch_size=self.batch_size, shuffle=True)
+
+        with torch.no_grad():
+            correct = 0
+            total = 0
+            for inputs, labels in test_loader:
+                outputs = self.model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                correct += (predicted == labels).sum().item()
+                total += labels.s
+
+        return (correct / total) * 100
 
         #######################################################################
         #                       ** END OF YOUR CODE **
