@@ -3,7 +3,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 import pickle
 import numpy as np
 import pandas as pd
@@ -13,7 +12,7 @@ from sklearn.metrics import mean_squared_error
 
 class Network(nn.Module):
     def _forward_unimplemented(self, *input: Any) -> None:
-        pass
+        print("this shouldn't be called")
 
     def __init__(self, input_size, hiddenLayer1_size, output_size):
         super(Network, self).__init__()
@@ -21,14 +20,14 @@ class Network(nn.Module):
         self.fc2 = nn.Linear(hiddenLayer1_size, output_size)
 
     def forward(self, x):
-        x = F.sigmoid(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
         return x
 
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch=30, learning_rate=0.001, batch_size=100, device="cpu"):
+    def __init__(self, x, nb_epoch=30, learning_rate=0.01, batch_size=100, device="cpu"):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -50,7 +49,7 @@ class Regressor():
         X = self._preprocessor(x, training=True)
         self.input_size = X.shape[1]
         self.output_size = 1
-        self.hiddenLayer1_size = 1  # we set this ourselves
+        self.hiddenLayer1_size = 8  # we set this ourselves
 
         # Our code
         self.model = None
@@ -58,6 +57,9 @@ class Regressor():
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.device = device
+
+        # To save scaler
+        self.scaler = None
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -92,32 +94,38 @@ class Regressor():
         # our code
 
         # Preprocess x
+        # Encoding textual data using One Hot
         lb = preprocessing.OneHotEncoder(handle_unknown='ignore')
         ocean_prox = x['ocean_proximity']
         ocean_prox = np.array(ocean_prox)
         dummy_ocean_prox = lb.fit_transform(ocean_prox.reshape(-1, 1)).toarray()
         x = x.drop(['ocean_proximity'], axis=1)
 
+        # Scaling the data using Min Max
         column_names = x.columns.tolist()
         x = x.values  # returns a numpy array
-        minmax_scaler = preprocessing.MinMaxScaler()
-        # standard_scaler = preprocessing.Standardizer()
-        x_scaled = minmax_scaler.fit_transform(x)
-        x = pd.DataFrame(x_scaled, columns=column_names)
+
+        if training:  # new preprocessing values required if training
+            self.scaler = preprocessing.MinMaxScaler()  # set scaler
+            self.scaler.fit(x) # fit scaler to x and save for later
+
+        x = self.scaler.transform(x) # transform x using scaler
+        x = pd.DataFrame(x, columns=column_names) # turn x into dataframe
 
         for i, dummy in enumerate(np.unique(ocean_prox)):
             x[dummy] = dummy_ocean_prox[:, i]
 
         # default value of 0 is  NOT final - set to proper default value
-        x.fillna(0)
+        x = x.fillna(0)
         x_tensor = torch.from_numpy(np.array(x)).float()
 
         # Preprocess Y
-        if not training:
+        if y is not None:
             y = y.fillna(0)
-            return np.array(x), np.array(y)
+            y_tensor = torch.from_numpy(np.array(y)).float()
+            return x_tensor, y_tensor
 
-        return np.array(x)
+        return x_tensor
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -147,12 +155,13 @@ class Regressor():
 
         # His code
         X, Y = self._preprocessor(x, y, training=True)  # Do not forget
+        dataset = torch.utils.data.TensorDataset(X, Y)
 
         # Our code
         for epoch in range(self.nb_epoch):
-            train_loader = torch.utils.data.DataLoader((X, Y), batch_size=self.batch_size, shuffle=True)
+            train_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
-            for (inputs, labels) in enumerate(train_loader):
+            for i, (inputs, labels) in enumerate(train_loader, 0):
                 # Forward pass
                 optimiser.zero_grad()
                 output = model(inputs)
@@ -163,7 +172,8 @@ class Regressor():
 
                 # Update parameters
                 optimiser.step()
-                print(loss.item())
+
+            print("Epoch [{}/{}], Training Loss: {}".format(epoch + 1, self.nb_epoch, loss.item()))
 
         self.model = model
 
@@ -188,16 +198,14 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, _ = self._preprocessor(x, training=False)  # Do not forget
+        X = self._preprocessor(x, training=False)  # Do not forget
 
-        test_loader = torch.utils.data.DataLoader(X, batch_size=self.batch_size, shuffle=True)
-
+        test_array = []
         with torch.no_grad():
-            for inputs, labels in test_loader:
-                outputs = self.model(inputs)
-                pred_values, _ = torch.max(outputs.data, 1)
-
-        return pred_values
+            for i, value in enumerate(X):
+                outputs = self.model(value)
+                test_array.append(outputs)
+        return np.array(test_array)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -222,14 +230,10 @@ class Regressor():
         #######################################################################
 
         X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
-
-        test_loader = torch.utils.data.DataLoader((X, Y), batch_size=self.batch_size, shuffle=True)
-
-        with torch.no_grad():
-            for inputs, labels in test_loader:
-                outputs = self.model(inputs)
-                pred_value, _ = torch.max(outputs.data, 1)
-
+        pred_value = self.predict(x)
+        print(pred_value.shape)
+        print(pred_value)
+        #print(pred_value[pred_value != pred_value[0]])
         return mean_squared_error(Y, pred_value)
 
         #######################################################################
