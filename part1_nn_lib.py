@@ -1,9 +1,9 @@
 import numpy as np
 import pickle
-from numpy.random._generator import default_rng
+from numpy.random import default_rng
 
 
-def xavier_init(size, gain = 1.0):
+def xavier_init(size, gain=1.0):
     """
     Xavier initialization of network weights.
 
@@ -223,6 +223,7 @@ class ReluLayer(Layer):
         #                       ** END OF YOUR CODE **
         #######################################################################
 
+
 class LinearLayer(Layer):
     """
     LinearLayer: Performs affine transformation of input.
@@ -359,7 +360,7 @@ class MultiLayerNetwork(object):
             if activation == "relu":
                 self._layers.append(ReluLayer())
             if activation == "identity":
-                self._layers.append(LinearLayer(neurons[i-1], neurons[i]))
+                self._layers.append(LinearLayer(neurons[i - 1], neurons[i]))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -428,7 +429,7 @@ class MultiLayerNetwork(object):
         #######################################################################
 
         for layer in self._layers:
-            layer.update_params(learning_rate)
+            layer.update_params(learning_rate)  # there is no update params in sigmoid and relu
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -458,13 +459,13 @@ class Trainer(object):
     """
 
     def __init__(
-        self,
-        network,
-        batch_size,
-        nb_epoch,
-        learning_rate,
-        loss_fun,
-        shuffle_flag,
+            self,
+            network,
+            batch_size,
+            nb_epoch,
+            learning_rate,
+            loss_fun,
+            shuffle_flag,
     ):
         """
         Constructor of the Trainer.
@@ -561,7 +562,8 @@ class Trainer(object):
             if self.shuffle_flag:
                 input_dataset, target_dataset = self.shuffle(input_dataset, target_dataset)
 
-            input_batches = np.split(input_dataset, len(input_dataset) / self.batch_size)
+            input_batches = np.split(input_dataset,
+                                     len(input_dataset) / self.batch_size)  # How do we ensure that this two match?
             target_batches = np.split(target_dataset, len(target_dataset) / self.batch_size)
 
             for mini_input_batch, mini_target_batch in zip(input_batches, target_batches):
@@ -621,7 +623,7 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        self.n_parameters = np.stack((data.min(axis=0), data.max(axis=0)))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -640,8 +642,10 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        data = data - self.n_parameters[0]
+        data = data / (self.n_parameters[1] - self.n_parameters[0])
 
+        return data
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -669,7 +673,7 @@ class Preprocessor(object):
 def example_main():
     input_dim = 4
     neurons = [16, 3]
-    activations = ["relu", "identity"]
+    activations = ["relu", "identity"]  # fails with two relus and two sigmoids in a row also with relu and sigmoid
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
     dat = np.loadtxt("iris.dat")
@@ -687,9 +691,9 @@ def example_main():
 
     prep_input = Preprocessor(x_train)
 
+    x_train_pre = prep_input.apply(x_train)
+    x_val_pre = prep_input.apply(x_val)
 
-    #x_train_pre = prep_input.apply(x_train)
-    #x_val_pre = prep_input.apply(x_val)
 
     trainer = Trainer(
         network=net,
