@@ -71,7 +71,7 @@ y_train = data.loc[:, [output_label]]
 # This example trains on the whole available dataset.
 # You probably want to separate some held-out data
 # to make sure the model isn't overfitting
-regressor = Regressor(x_train, nb_epoch=10, learning_rate=0.00001)
+regressor = Regressor(x_train, nb_epoch=20, learning_rate=0.1)
 regressor.fit(x_train, y_train)
 #regressor.predict()
 save_regressor(regressor)

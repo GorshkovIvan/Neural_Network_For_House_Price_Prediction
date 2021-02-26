@@ -348,13 +348,16 @@ class MultiLayerNetwork(object):
         self.neurons = neurons
         self.activations = activations
 
+
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
         self._layers = []
 
         self._layers.append(LinearLayer(self.input_dim, self.neurons[0]))
+
         for i, activation in enumerate(self.activations):
+
             if activation == "sigmoid":
                 self._layers.append(SigmoidLayer())
             if activation == "relu":
@@ -362,6 +365,9 @@ class MultiLayerNetwork(object):
             if activation == "identity":
                 self._layers.append(LinearLayer(neurons[i - 1], neurons[i]))
 
+            if i < len(self.activations) - 1:
+                 self._layers.append(LinearLayer(neurons[i], neurons[i + 1]))
+        """
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -429,7 +435,7 @@ class MultiLayerNetwork(object):
         #######################################################################
 
         for layer in self._layers:
-            layer.update_params(learning_rate)  # there is no update params in sigmoid and relu
+            layer.update_params(learning_rate)  # there are no update params in sigmoid and relu
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -676,7 +682,7 @@ class Preprocessor(object):
 def example_main():
     input_dim = 4
     neurons = [16, 3]
-    activations = ["relu", "identity"]  # fails with two relus and two sigmoids in a row also with relu and sigmoid
+    activations = ["relu", "identity"]
     net = MultiLayerNetwork(input_dim, neurons, activations)
 
     dat = np.loadtxt("iris.dat")
@@ -684,6 +690,7 @@ def example_main():
 
     x = dat[:, :4]
     y = dat[:, 4:]
+
 
     split_idx = int(0.8 * len(x))
 
@@ -696,14 +703,6 @@ def example_main():
 
     x_train_pre = prep_input.apply(x_train)
     x_val_pre = prep_input.apply(x_val)
-
-    # our code
-    #print(x_train_pre)
-    x_train_revert = prep_input.revert(x_train_pre)
-    print("revert")
-    print(x_train_revert)
-    print("x_train")
-    print(x_train)
 
     trainer = Trainer(
         network=net,

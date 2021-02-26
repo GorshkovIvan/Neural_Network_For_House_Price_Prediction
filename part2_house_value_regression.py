@@ -49,7 +49,8 @@ class Regressor():
         X = self._preprocessor(x, training=True)
         self.input_size = X.shape[1]
         self.output_size = 1
-        self.hiddenLayer1_size = 8  # we set this ourselves
+        self.hiddenLayer1_size = 200  # we set this ourselves
+        self.hiddenLayer2_size = 200 # we set this ourselves
 
         # Our code
         self.model = None
@@ -120,6 +121,7 @@ class Regressor():
         x_tensor = torch.from_numpy(np.array(x)).float()
 
         # Preprocess Y
+
         if y is not None:
             y = y.fillna(0)
             y_tensor = torch.from_numpy(np.array(y)).float()
