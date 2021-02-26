@@ -663,7 +663,10 @@ class Preprocessor(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        pass
+        data = data * (self.n_parameters[1] - self.n_parameters[0])
+        data = data + self.n_parameters[0]
+
+        return data
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -694,6 +697,13 @@ def example_main():
     x_train_pre = prep_input.apply(x_train)
     x_val_pre = prep_input.apply(x_val)
 
+    # our code
+    #print(x_train_pre)
+    x_train_revert = prep_input.revert(x_train_pre)
+    print("revert")
+    print(x_train_revert)
+    print("x_train")
+    print(x_train)
 
     trainer = Trainer(
         network=net,
