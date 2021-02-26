@@ -353,7 +353,17 @@ class MultiLayerNetwork(object):
         #                       ** START OF YOUR CODE **
         #######################################################################
         self._layers = []
+        self.neurons = [self.input_dim] + self.neurons
 
+        for i, activation in enumerate(self.activations):
+            self._layers.append(LinearLayer(self.neurons[i], self.neurons[i + 1]))
+
+            if activation == "sigmoid":
+                self._layers.append(SigmoidLayer())
+            if activation == "relu":
+                self._layers.append(ReluLayer())
+
+        """
         self._layers.append(LinearLayer(self.input_dim, self.neurons[0]))
 
         for i, activation in enumerate(self.activations):

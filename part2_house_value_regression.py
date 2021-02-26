@@ -1,5 +1,6 @@
 from typing import Any
 
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -14,14 +15,19 @@ class Network(nn.Module):
     def _forward_unimplemented(self, *input: Any) -> None:
         print("this shouldn't be called")
 
-    def __init__(self, input_size, hiddenLayer1_size, output_size):
+    def __init__(self, input_size, hiddenLayer1_size, hiddenLayer2_size, output_size):
         super(Network, self).__init__()
         self.fc1 = nn.Linear(input_size, hiddenLayer1_size)
-        self.fc2 = nn.Linear(hiddenLayer1_size, output_size)
+        self.fc2 = nn.Linear(hiddenLayer1_size, hiddenLayer2_size)
+        self.fc3 = nn.Linear(hiddenLayer2_size, output_size)
+        nn.init.xavier_uniform_(self.fc1.weight)
+        nn.init.xavier_uniform_(self.fc2.weight)
+        nn.init.xavier_uniform_(self.fc3.weight)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
+        x = torch.relu(self.fc3(x))
         return x
 
 
@@ -129,6 +135,7 @@ class Regressor():
 
         return x_tensor
 
+
         #######################################################################
         #                       ** END OF YOUR CODE **
         #######################################################################
@@ -151,15 +158,18 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        model = Network(self.input_size, self.hiddenLayer1_size, self.output_size).to(self.device)
+        model = Network(self.input_size, self.hiddenLayer1_size, self.hiddenLayer2_size, self.output_size).to(self.device)
         loss_function = nn.MSELoss()
-        optimiser = optim.SGD(model.parameters(), lr=self.learning_rate)
+        #optimiser = optim.SGD(model.parameters(), lr=self.learning_rate, momentum=0.9)
+        optimiser = optim.Adam(model.parameters())
+        print(self.learning_rate)
 
         # His code
         X, Y = self._preprocessor(x, y, training=True)  # Do not forget
         dataset = torch.utils.data.TensorDataset(X, Y)
 
         # Our code
+        loss_list = []
         for epoch in range(self.nb_epoch):
             train_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
@@ -175,8 +185,11 @@ class Regressor():
                 # Update parameters
                 optimiser.step()
 
-            print("Epoch [{}/{}], Training Loss: {}".format(epoch + 1, self.nb_epoch, loss.item()))
+                loss_list.append(loss.item())
 
+            print("Epoch [{}/{}], Training Loss: {}".format(epoch + 1, self.nb_epoch, loss.item()))
+        plt.plot(range(len(loss_list)), loss_list)
+        plt.show()
         self.model = model
 
         #######################################################################
@@ -200,11 +213,11 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X = self._preprocessor(x, training=False)  # Do not forget
+        # X = self._preprocessor(x, training=False)  # Do not forget
 
         test_array = []
         with torch.no_grad():
-            for i, value in enumerate(X):
+            for i, value in enumerate(x):
                 outputs = self.model(value)
                 test_array.append(outputs)
         return np.array(test_array)
@@ -232,10 +245,10 @@ class Regressor():
         #######################################################################
 
         X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
-        pred_value = self.predict(x)
+        pred_value = self.predict(X)
         print(pred_value.shape)
         print(pred_value)
-        #print(pred_value[pred_value != pred_value[0]])
+        print(Y)
         return mean_squared_error(Y, pred_value)
 
         #######################################################################
