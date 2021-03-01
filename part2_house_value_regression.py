@@ -1,6 +1,7 @@
 from typing import Any
 
 import matplotlib.pyplot as plt
+import sklearn
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,7 +9,9 @@ import pickle
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, classification_report
+from numpy.random import default_rng
+from sklearn.model_selection import train_test_split
 
 
 class Network(nn.Module):
@@ -277,7 +280,7 @@ def load_regressor():
     return trained_model
 
 
-def RegressorHyperParameterSearch():
+def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     # Ensure to add whatever inputs you deem necessary to this function
     """
     Performs a hyper-parameter for fine-tuning the regressor implemented 
@@ -294,6 +297,23 @@ def RegressorHyperParameterSearch():
     #######################################################################
     #                       ** START OF YOUR CODE **
     #######################################################################
+
+    param_grid = {'C': [0.1, 1, 10, 100],
+                  'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+                  'gamma': ['scale', 'auto'],
+                  'kernel': ['linear']}
+
+    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, verbose=3, n_jobs=-1)
+
+    # fitting the model for grid search
+    grid.fit(x_train, y_train)
+
+    # print best parameter after tuning
+    print(grid.best_params_)
+    grid_predictions = grid.predict(x_test)
+
+    # print classification report
+    print(classification_report(y_test, grid_predictions))
 
     return  # Return the chosen hyper parameters
 
@@ -313,6 +333,13 @@ def example_main():
     # Spliting input and output
     x_train = data.loc[:, data.columns != output_label]
     y_train = data.loc[:, [output_label]]
+
+    # Our code
+    random_generator = default_rng()
+    shuffled_indices = random_generator.permutation(len(x_train))
+    x_train = x_train[shuffled_indices[:]]
+    y_train = y_train[shuffled_indices[:]]
+    x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.2, random_state=1)
 
     # Training
     # This example trains on the whole available dataset. 

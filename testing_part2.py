@@ -56,6 +56,8 @@ df1 = data[data.isna().any(axis=1)]
 
 output_label = "median_house_value"
 """
+
+
 output_label = "median_house_value"
 
 # Use pandas to read CSV data as it contains various object types
