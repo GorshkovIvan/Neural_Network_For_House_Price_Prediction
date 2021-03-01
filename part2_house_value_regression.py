@@ -162,7 +162,7 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        model = Network(self.input_size, self.hiddenLayer1_size, self.hiddenLayer2_size, self.output_size).to(self.device)
+        self.model = Network(self.input_size, self.hiddenLayer1_size, self.hiddenLayer2_size, self.output_size).to(self.device)
         loss_function = nn.MSELoss()
         #optimiser = optim.SGD(model.parameters(), lr=self.learning_rate, momentum=0.9)
         optimiser = optim.Adam(self.model.parameters())
@@ -171,7 +171,11 @@ class Regressor():
         x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=1)
 
         # His code
-        X, Y = self._preprocessor(x, y, training=True)  # Do not forget
+        X, Y = self._preprocessor(x_train, y_train, training=True)  # Do not forget
+
+        # Split X, Y into x_train, x_val and y_train, y_val
+
+
         dataset = torch.utils.data.TensorDataset(X, Y)
 
         # Our code
