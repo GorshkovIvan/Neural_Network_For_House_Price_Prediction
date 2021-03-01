@@ -8,6 +8,7 @@ import torch.optim as optim
 import pickle
 import numpy as np
 import pandas as pd
+import sys
 from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error, classification_report
 from numpy.random import default_rng
@@ -164,8 +165,10 @@ class Regressor():
         model = Network(self.input_size, self.hiddenLayer1_size, self.hiddenLayer2_size, self.output_size).to(self.device)
         loss_function = nn.MSELoss()
         #optimiser = optim.SGD(model.parameters(), lr=self.learning_rate, momentum=0.9)
-        optimiser = optim.Adam(model.parameters())
+        optimiser = optim.Adam(self.model.parameters())
         print(self.learning_rate)
+
+        x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=1)
 
         # His code
         X, Y = self._preprocessor(x, y, training=True)  # Do not forget
@@ -173,13 +176,21 @@ class Regressor():
 
         # Our code
         loss_list = []
+        previous_score = sys.maxsize
         for epoch in range(self.nb_epoch):
             train_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+            running_loss = 0.0
+
+            # Calculate validation mse score
+            current_score = self.score(x_val, y_val)
+            if current_score > previous_score:
+                break
+            previous_score = current_score
 
             for i, (inputs, labels) in enumerate(train_loader, 0):
                 # Forward pass
                 optimiser.zero_grad()
-                output = model(inputs)
+                output = self.model(inputs)
 
                 # Calculate Loss
                 loss = loss_function(output, labels)
@@ -188,12 +199,18 @@ class Regressor():
                 # Update parameters
                 optimiser.step()
 
-                loss_list.append(loss.item())
+                running_loss += loss.item()
 
-            print("Epoch [{}/{}], Training Loss: {}".format(epoch + 1, self.nb_epoch, loss.item()))
+            print("Epoch [{}/{}], Average Training Loss: {}, Validation Loss: {}"
+                  .format(epoch + 1, self.nb_epoch, running_loss / (i + 1), current_score))
+            loss_list.append(running_loss / (i + 1))
+
         plt.plot(range(len(loss_list)), loss_list)
+        plt.ylabel("Average training loss per epoch")
+        plt.xlabel("Epoch")
         plt.show()
-        self.model = model
+
+        #self.save_regressor("trained_model.pickle")
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -216,14 +233,14 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        # X = self._preprocessor(x, training=False)  # Do not forget
+        X = self._preprocessor(x, training=False)  # Do not forget
 
-        test_array = []
+        predictions = []
         with torch.no_grad():
-            for i, value in enumerate(x):
+            for i, value in enumerate(X):
                 outputs = self.model(value)
-                test_array.append(outputs)
-        return np.array(test_array)
+                predictions.append(outputs)
+        return np.array(predictions)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -248,11 +265,15 @@ class Regressor():
         #######################################################################
 
         X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
-        pred_value = self.predict(X)
-        print(pred_value.shape)
-        print(pred_value)
-        print(Y)
-        return mean_squared_error(Y, pred_value)
+
+        predictions = []
+        with torch.no_grad():
+            for i, value in enumerate(X):
+
+                outputs = self.model(value)
+                predictions.append(outputs)
+
+        return mean_squared_error(Y, np.array(predictions))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
