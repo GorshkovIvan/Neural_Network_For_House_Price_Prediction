@@ -15,6 +15,18 @@ from numpy.random import default_rng
 from sklearn.model_selection import train_test_split
 
 
+def include_dummies(x):
+    lb = preprocessing.OneHotEncoder(handle_unknown='ignore')
+    ocean_prox = x['ocean_proximity']
+    ocean_prox = np.array(ocean_prox)
+    dummy_ocean_prox = lb.fit_transform(ocean_prox.reshape(-1, 1)).toarray()
+    x = x.drop(['ocean_proximity'], axis=1)
+
+    for i, dummy in enumerate(np.unique(ocean_prox)):
+        x[dummy] = dummy_ocean_prox[:, i]
+
+    return x
+
 
 class Network(nn.Module):
     def _forward_unimplemented(self, *input: Any) -> None:
@@ -108,11 +120,15 @@ class Regressor():
 
         # Preprocess x
         # Encoding textual data using One Hot
+
+        """
         lb = preprocessing.OneHotEncoder(handle_unknown='ignore')
         ocean_prox = x['ocean_proximity']
         ocean_prox = np.array(ocean_prox)
         dummy_ocean_prox = lb.fit_transform(ocean_prox.reshape(-1, 1)).toarray()
         x = x.drop(['ocean_proximity'], axis=1)
+        print("shape of x after one-hot")
+        print(x.shape)"""
 
         # Scaling the data using Min Max
         column_names = x.columns.tolist()
@@ -151,7 +167,7 @@ class Regressor():
             y_tensor = torch.from_numpy(np.array(y)).float()
             return x_tensor, y_tensor
 
-        return x_tensor
+        return x_tensor, None
 
 
         #######################################################################
@@ -187,7 +203,6 @@ class Regressor():
         X, Y = self._preprocessor(x_train, y_train, training=True)  # Do not forget
 
         # Split X, Y into x_train, x_val and y_train, y_val
-
 
         dataset = torch.utils.data.TensorDataset(X, Y)
 
@@ -288,6 +303,7 @@ class Regressor():
         #######################################################################
 
         X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
+
 
         predictions = []
         with torch.no_grad():
@@ -418,8 +434,10 @@ def example_main():
     save_regressor(regressor)
 
     # Error
-    error = regressor.score(x_train, y_train)
-    print("\nRegressor error: {}\n".format(error))
+    #print(f"shape of x_test in fit {x_test.shape}")
+    #print(f"shape of y_test in fit {y_test.shape}")
+    #error = regressor.score(x_test, y_test)
+    #print("\nRegressor error: {}\n".format(error))
 
     RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
 
