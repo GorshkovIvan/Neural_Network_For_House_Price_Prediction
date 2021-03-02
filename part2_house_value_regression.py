@@ -122,9 +122,21 @@ class Regressor():
 
         x = self.scaler.transform(x) # transform x using scaler
         x = pd.DataFrame(x, columns=column_names) # turn x into dataframe
+        """
+        dummies = ['<1H OCEAN', 'INLAND', 'ISLAND', 'NEAR BAY', 'NEAR OCEAN']
 
-        for i, dummy in enumerate(np.unique(ocean_prox)):
-            x[dummy] = dummy_ocean_prox[:, i]
+        i = 0
+        j = 0
+        for dummy in np.unique(ocean_prox):
+            if dummies[j] == dummy:
+                x[dummy] = dummy_ocean_prox[:, i]
+                i += 1
+                j += 1
+            else:
+                x[dummy] = np.zeros(dummy_ocean_prox[:, i].shape)
+                j += 1
+
+        """
 
         # default value of 0 is  NOT final - set to proper default value
         x = x.fillna(0)
@@ -356,15 +368,17 @@ def example_main():
     data = pd.read_csv("housing.csv")
 
     # Spliting input and output
-    x_train = data.loc[:, data.columns != output_label]
-    y_train = data.loc[:, [output_label]]
-
+    x = data.loc[:, data.columns != output_label]
+    y = data.loc[:, [output_label]]
+    x = include_dummies(x)
     # Our code
-    random_generator = default_rng()
-    shuffled_indices = random_generator.permutation(len(x_train))
-    x_train = x_train[shuffled_indices[:]]
-    y_train = y_train[shuffled_indices[:]]
-    x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.2, random_state=1)
+    #random_generator = default_rng()
+    #shuffled_indices = random_generator.permutation(len(x_train))
+
+
+    #y_train = y_train[shuffled_indices[:]]
+
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=3, shuffle=True)
 
     # Training
     # This example trains on the whole available dataset. 
