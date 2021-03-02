@@ -11,7 +11,6 @@ import pandas as pd
 import sys
 from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error, classification_report
-from numpy.random import default_rng
 from sklearn.model_selection import train_test_split
 
 
@@ -221,12 +220,6 @@ class Regressor():
             previous_score = current_score
 
             for i, (inputs, labels) in enumerate(train_loader, 0):
-                #print("Inputs:")
-                #print(inputs)
-                #print(inputs.shape)
-                #print("Labels:")
-                #print(labels)
-                #print(labels.shape)
                 # Forward pass
                 optimiser.zero_grad()
                 output = self.model(inputs)
@@ -240,16 +233,14 @@ class Regressor():
 
                 running_loss += loss.item()
 
-            print("Epoch [{}/{}], Average Training Loss: {}, Validation Loss: {}"
-                  .format(epoch + 1, self.nb_epoch, running_loss / (i + 1), current_score))
+            #print("Epoch [{}/{}], Average Training Loss: {}, Validation Loss: {}"
+                  #.format(epoch + 1, self.nb_epoch, running_loss / (i + 1), current_score))
             loss_list.append(running_loss / (i + 1))
 
         #plt.plot(range(len(loss_list)), loss_list)
         #plt.ylabel("Average training loss per epoch")
         #plt.xlabel("Epoch")
         #plt.show()
-
-        #self.save_regressor("trained_model.pickle")
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -420,13 +411,8 @@ def example_main():
     x = data.loc[:, data.columns != output_label]
     y = data.loc[:, [output_label]]
     x = include_dummies(x)
+
     # Our code
-    #random_generator = default_rng()
-    #shuffled_indices = random_generator.permutation(len(x_train))
-
-
-    #y_train = y_train[shuffled_indices[:]]
-
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=3, shuffle=True)
 
     # Training
@@ -434,14 +420,12 @@ def example_main():
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
     regressor = Regressor(x_train, nb_epoch=1)
-    #regressor.fit(x_train, y_train)
-    #save_regressor(regressor)
+    regressor.fit(x_train, y_train)
+    save_regressor(regressor)
 
     # Error
-    #print(f"shape of x_test in fit {x_test.shape}")
-    #print(f"shape of y_test in fit {y_test.shape}")
-    #error = regressor.score(x_test, y_test)
-    #print("\nRegressor error: {}\n".format(error))
+    error = regressor.score(x_test, y_test)
+    print("\nRegressor error: {}\n".format(error))
 
     RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
 
