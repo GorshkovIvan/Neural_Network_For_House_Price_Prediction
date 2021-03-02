@@ -205,6 +205,7 @@ class Regressor():
         # Split X, Y into x_train, x_val and y_train, y_val
 
         dataset = torch.utils.data.TensorDataset(X, Y)
+        print("Model with: Epoch {}, Learning Rate {} and Batch Size {}" .format(self.nb_epoch, self.learning_rate, self.batch_size))
 
         # Our code
         loss_list = []
@@ -220,12 +221,12 @@ class Regressor():
             previous_score = current_score
 
             for i, (inputs, labels) in enumerate(train_loader, 0):
-                print("Inputs:")
+                #print("Inputs:")
                 #print(inputs)
-                print(inputs.shape)
-                print("Labels:")
+                #print(inputs.shape)
+                #print("Labels:")
                 #print(labels)
-                print(labels.shape)
+                #print(labels.shape)
                 # Forward pass
                 optimiser.zero_grad()
                 output = self.model(inputs)
@@ -364,28 +365,31 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     #                       ** START OF YOUR CODE **
     #######################################################################
 
-    param_grid = {'C': [0.1, 1, 10, 100],
-                  'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-                  'gamma': ['scale', 'auto'],
-                  'kernel': ['linear']}
-
     param_grid = {'x': [x_train],
-        'nb_epoch': [3],
+        'nb_epoch': [3, 10, 20],
                   'learning_rate': [0.001, 0.0001],
                   'batch_size': [10]}
 
-    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, verbose=3, n_jobs=-1)
+    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, verbose=0, n_jobs=-1)
+    # CV is defaulted to 5, used to calculate scores
 
     # fitting the model for grid search
     grid_result = grid.fit(x_train, y_train)
 
     print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
-    means = grid_result.cv_results_['mean_test_score']
-    stds = grid_result.cv_results_['std_test_score']
-    params = grid_result.cv_results_['params']
+    # predicting x_test using the best scoring model
+    y_pred = grid_result.predict(x_test)
+    print(y_pred)
+    print("Mean Squared Error on test set")
+    print(mean_squared_error(y_pred, y_test))
 
-    for mean, stdev, param in zip(means, stds, params):
-        print("%f (%f) with: %r" % (mean, stdev, param))
+
+    #means = grid_result.cv_results_['mean_test_score']
+    #stds = grid_result.cv_results_['std_test_score']
+    #params = grid_result.cv_results_['params']
+
+    #for mean, stdev, param in zip(means, stds, params):
+        #print("%f (%f) with: %r" % (mean, stdev, param))
 
     # fitting the model for grid search
     #grid.fit(x_train, y_train)
@@ -431,7 +435,7 @@ def example_main():
     # to make sure the model isn't overfitting
     regressor = Regressor(x_train, nb_epoch=1)
     #regressor.fit(x_train, y_train)
-    save_regressor(regressor)
+    #save_regressor(regressor)
 
     # Error
     #print(f"shape of x_test in fit {x_test.shape}")
