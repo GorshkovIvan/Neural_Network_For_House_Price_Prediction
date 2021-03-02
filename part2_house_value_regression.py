@@ -15,6 +15,7 @@ from numpy.random import default_rng
 from sklearn.model_selection import train_test_split
 
 
+
 class Network(nn.Module):
     def _forward_unimplemented(self, *input: Any) -> None:
         print("this shouldn't be called")
@@ -56,7 +57,8 @@ class Regressor():
         #######################################################################
 
         # Replace this code with your own
-        X = self._preprocessor(x, training=True)
+        X, _ = self._preprocessor(x, training=True)
+        self.x = x
         self.input_size = X.shape[1]
         self.output_size = 1
         self.hiddenLayer1_size = 200  # we set this ourselves
@@ -178,9 +180,8 @@ class Regressor():
         loss_function = nn.MSELoss()
         #optimiser = optim.SGD(model.parameters(), lr=self.learning_rate, momentum=0.9)
         optimiser = optim.Adam(self.model.parameters())
-        print(self.learning_rate)
 
-        x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=1)
+        x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=1, shuffle=True)
 
         # His code
         X, Y = self._preprocessor(x_train, y_train, training=True)  # Do not forget
@@ -204,6 +205,12 @@ class Regressor():
             previous_score = current_score
 
             for i, (inputs, labels) in enumerate(train_loader, 0):
+                print("Inputs:")
+                #print(inputs)
+                print(inputs.shape)
+                print("Labels:")
+                #print(labels)
+                print(labels.shape)
                 # Forward pass
                 optimiser.zero_grad()
                 output = self.model(inputs)
@@ -221,10 +228,10 @@ class Regressor():
                   .format(epoch + 1, self.nb_epoch, running_loss / (i + 1), current_score))
             loss_list.append(running_loss / (i + 1))
 
-        plt.plot(range(len(loss_list)), loss_list)
-        plt.ylabel("Average training loss per epoch")
-        plt.xlabel("Epoch")
-        plt.show()
+        #plt.plot(range(len(loss_list)), loss_list)
+        #plt.ylabel("Average training loss per epoch")
+        #plt.xlabel("Epoch")
+        #plt.show()
 
         #self.save_regressor("trained_model.pickle")
 
@@ -249,7 +256,7 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X = self._preprocessor(x, training=False)  # Do not forget
+        X, _ = self._preprocessor(x, training=False)  # Do not forget
 
         predictions = []
         with torch.no_grad():
@@ -285,7 +292,6 @@ class Regressor():
         predictions = []
         with torch.no_grad():
             for i, value in enumerate(X):
-
                 outputs = self.model(value)
                 predictions.append(outputs)
 
@@ -295,6 +301,13 @@ class Regressor():
         #                       ** END OF YOUR CODE **
         #######################################################################
 
+    def get_params(self, deep=True):
+        return {"x": self.x, "nb_epoch": self.nb_epoch, "learning_rate": self.learning_rate, "batch_size": self.batch_size}
+
+    def set_params(self, **params):
+        for parameter, value in params.items():
+            setattr(self, parameter, value)
+        return self
 
 def save_regressor(trained_model):
     """ 
@@ -340,17 +353,33 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
                   'gamma': ['scale', 'auto'],
                   'kernel': ['linear']}
 
+    param_grid = {'x': [x_train],
+        'nb_epoch': [3],
+                  'learning_rate': [0.001, 0.0001],
+                  'batch_size': [10]}
+
     grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, verbose=3, n_jobs=-1)
 
     # fitting the model for grid search
-    grid.fit(x_train, y_train)
+    grid_result = grid.fit(x_train, y_train)
+
+    print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+    means = grid_result.cv_results_['mean_test_score']
+    stds = grid_result.cv_results_['std_test_score']
+    params = grid_result.cv_results_['params']
+
+    for mean, stdev, param in zip(means, stds, params):
+        print("%f (%f) with: %r" % (mean, stdev, param))
+
+    # fitting the model for grid search
+    #grid.fit(x_train, y_train)
 
     # print best parameter after tuning
-    print(grid.best_params_)
-    grid_predictions = grid.predict(x_test)
+    #print(grid.best_params_)
+    #grid_predictions = grid.predict(x_test)
 
     # print classification report
-    print(classification_report(y_test, grid_predictions))
+    #print(classification_report(y_test, grid_predictions))
 
     return  # Return the chosen hyper parameters
 
@@ -384,14 +413,15 @@ def example_main():
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch=10)
-    regressor.fit(x_train, y_train)
+    regressor = Regressor(x_train, nb_epoch=1)
+    #regressor.fit(x_train, y_train)
     save_regressor(regressor)
 
     # Error
     error = regressor.score(x_train, y_train)
     print("\nRegressor error: {}\n".format(error))
 
+    RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
 
 if __name__ == "__main__":
     example_main()
