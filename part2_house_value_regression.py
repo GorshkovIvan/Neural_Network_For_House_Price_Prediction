@@ -1,6 +1,6 @@
 from typing import Any
 
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import sklearn
 import torch
 import torch.nn as nn
@@ -129,6 +129,8 @@ class Regressor():
         print("shape of x after one-hot")
         print(x.shape)"""
 
+        x = include_dummies(x)
+
         # Scaling the data using Min Max
         column_names = x.columns.tolist()
         x = x.values  # returns a numpy array
@@ -208,6 +210,7 @@ class Regressor():
 
         # Our code
         loss_list = []
+        score_list = []
         previous_score = sys.maxsize
         for epoch in range(self.nb_epoch):
             train_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
@@ -215,7 +218,9 @@ class Regressor():
 
             # Calculate validation mse score
             current_score = self.score(x_val, y_val)
+            score_list.append(current_score)
             if current_score > previous_score:
+                loss_list.append(loss_list[-1])
                 break
             previous_score = current_score
 
@@ -233,14 +238,19 @@ class Regressor():
 
                 running_loss += loss.item()
 
-            #print("Epoch [{}/{}], Average Training Loss: {}, Validation Loss: {}"
-                  #.format(epoch + 1, self.nb_epoch, running_loss / (i + 1), current_score))
-            loss_list.append(running_loss / (i + 1))
+            print("Epoch [{}/{}], Average Training Loss: {}, Validation Loss: {}"
+                  .format(epoch + 1, self.nb_epoch, running_loss / len(train_loader), current_score))
+            loss_list.append(running_loss / len(train_loader))
 
-        #plt.plot(range(len(loss_list)), loss_list)
-        #plt.ylabel("Average training loss per epoch")
-        #plt.xlabel("Epoch")
-        #plt.show()
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
+        ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
+        ax1.set_ylabel("Average training loss per epoch")
+        ax1.set_xlabel("Epoch")
+        ax2.set_ylabel("Validation Score")
+        fig.legend(loc=(.63, .75))
+        plt.show()
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -410,7 +420,7 @@ def example_main():
     # Spliting input and output
     x = data.loc[:, data.columns != output_label]
     y = data.loc[:, [output_label]]
-    x = include_dummies(x)
+    #x = include_dummies(x)
 
     # Our code
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=3, shuffle=True)
@@ -419,15 +429,15 @@ def example_main():
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch=1)
+    regressor = Regressor(x_train, nb_epoch=20)
     regressor.fit(x_train, y_train)
     save_regressor(regressor)
 
     # Error
-    error = regressor.score(x_test, y_test)
+    error = regressor.score(x_test, y_train)
     print("\nRegressor error: {}\n".format(error))
 
-    RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
+    #RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
 
 if __name__ == "__main__":
     example_main()
