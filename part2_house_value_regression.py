@@ -211,30 +211,40 @@ class Regressor():
         # Our code
         loss_list = []
         score_list = []
+        print("1")
         previous_score = sys.maxsize
+        print("2")
         for epoch in range(self.nb_epoch):
+            print("3")
             train_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
             running_loss = 0.0
-
+            print("4")
             # Calculate validation mse score
             current_score = self.score(x_val, y_val)
+            print("5")
             score_list.append(current_score)
             if current_score > previous_score:
                 loss_list.append(loss_list[-1])
                 break
             previous_score = current_score
-
+            print("6")
             for i, (inputs, labels) in enumerate(train_loader, 0):
                 # Forward pass
+                print("7")
                 optimiser.zero_grad()
+                print("8")
                 output = self.model(inputs)
 
                 # Calculate Loss
+                print("9")
                 loss = loss_function(output, labels)
+                print("10")
                 loss.backward()
+                print("11")
 
                 # Update parameters
                 optimiser.step()
+                print("12")
 
                 running_loss += loss.item()
 
@@ -434,7 +444,7 @@ def example_main():
     save_regressor(regressor)
 
     # Error
-    error = regressor.score(x_test, y_test)
+    error = regressor.score(x_train, y_train)
     print("\nRegressor error: {}\n".format(error))
 
     #RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
