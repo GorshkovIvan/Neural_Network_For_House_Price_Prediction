@@ -324,7 +324,9 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
+        # change training back to False
+        # change training back to False
+        X, Y = self._preprocessor(x, y=y, training=True)  # Do not forget
         print("score 1")
 
         predictions = []
