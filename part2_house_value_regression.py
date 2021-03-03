@@ -335,7 +335,7 @@ class Regressor():
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
+        print("score preprocessor")
         X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
         print("score 1")
 
