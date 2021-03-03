@@ -184,9 +184,9 @@ class Regressor():
             y = y.fillna(0)
             print("preprocess 11")
             y_tensor = torch.from_numpy(y.to_numpy()).float()
-            return x_tensor, y_tensor
+            print("preprocess 12")
 
-        return x_tensor, None
+        return x_tensor, (y_tensor if isinstance(y, pd.DataFrame) else None)
 
 
         #######################################################################
@@ -279,6 +279,7 @@ class Regressor():
         #ax2.set_ylabel("Validation Score")
         #fig.legend(loc=(.63, .75))
         #plt.show()
+        return self
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -304,9 +305,12 @@ class Regressor():
         X, _ = self._preprocessor(x, training=False)  # Do not forget
 
         predictions = []
+        print("predictions 1")
         with torch.no_grad():
             for i, value in enumerate(X):
+                print("predictions 2")
                 outputs = self.model(value)
+                print("predictions 3")
                 predictions.append(outputs)
         return np.array(predictions)
 
@@ -399,6 +403,7 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     #######################################################################
     #X = include_dummies(x_train)
     #X, Y = model._preprocessor(x_train, y_train, training=False)
+    print("hyper param search entered")
 
     param_grid = {'x': [x_train],
         'nb_epoch': [20],
@@ -436,7 +441,7 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     # print classification report
     #print(classification_report(y_test, grid_predictions))
 
-    return  # Return the chosen hyper parameters
+    return grid_result.best_params_ # Return the chosen hyper parameters
 
     #######################################################################
     #                       ** END OF YOUR CODE **
