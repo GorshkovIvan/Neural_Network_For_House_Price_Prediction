@@ -74,6 +74,7 @@ class Regressor():
         #######################################################################
 
         # Replace this code with your own
+        print("init preprocessor")
         X, _ = self._preprocessor(x, training=True)
         self.x = x
         self.input_size = X.shape[1]
@@ -302,7 +303,7 @@ class Regressor():
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
+        print("Predict processor")
         X, _ = self._preprocessor(x, training=False)  # Do not forget
 
         predictions = []
