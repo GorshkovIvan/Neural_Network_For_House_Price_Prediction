@@ -219,6 +219,7 @@ class Regressor():
         x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=1, shuffle=True)
 
         # His code
+        print("fit preprocessor")
         X, Y = self._preprocessor(x_train, y_train, training=True)  # Do not forget
 
         # Split X, Y into x_train, x_val and y_train, y_val
