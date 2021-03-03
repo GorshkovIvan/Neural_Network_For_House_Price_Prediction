@@ -129,17 +129,23 @@ class Regressor():
         print("shape of x after one-hot")
         print(x.shape)"""
 
+        print("preprocess 1")
         x = include_dummies(x)
 
         # Scaling the data using Min Max
+        print("preprocess 2")
         column_names = x.columns.tolist()
         x = x.values  # returns a numpy array
 
         if training:  # new preprocessing values required if training
+            print("preprocess 3")
             self.scaler = preprocessing.MinMaxScaler()  # set scaler
+            print("preprocess 4")
             self.scaler.fit(x) # fit scaler to x and save for later
 
+        print("preprocess 5")
         x = self.scaler.transform(x) # transform x using scaler
+        print("preprocess 6")
         x = pd.DataFrame(x, columns=column_names) # turn x into dataframe
         """
         dummies = ['<1H OCEAN', 'INLAND', 'ISLAND', 'NEAR BAY', 'NEAR OCEAN']
@@ -158,13 +164,17 @@ class Regressor():
         """
 
         # default value of 0 is  NOT final - set to proper default value
+        print("preprocess 7")
         x = x.fillna(0)
+        print("preprocess 8")
         x_tensor = torch.from_numpy(np.array(x)).float()
 
         # Preprocess Y
-
+        print("preprocess 9")
         if y is not None:
+            print("preprocess 10")
             y = y.fillna(0)
+            print("preprocess 11")
             y_tensor = torch.from_numpy(np.array(y)).float()
             return x_tensor, y_tensor
 
