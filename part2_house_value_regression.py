@@ -315,14 +315,18 @@ class Regressor():
         #######################################################################
 
         X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
-
+        print("score 1")
 
         predictions = []
         with torch.no_grad():
+            print("score 2")
             for i, value in enumerate(X):
+                print("score loop 1")
                 outputs = self.model(value)
+                print("score loop 2")
                 predictions.append(outputs)
 
+        print("score 3")
         return mean_squared_error(Y, np.array(predictions))
 
         #######################################################################
