@@ -15,6 +15,8 @@ from sklearn.model_selection import train_test_split
 
 
 def include_dummies(x):
+    dummy_variables = ['<1H OCEAN', 'INLAND', 'ISLAND', 'NEAR BAY', 'NEAR OCEAN']
+
     lb = preprocessing.OneHotEncoder(handle_unknown='ignore')
     ocean_prox = x['ocean_proximity']
     ocean_prox = np.array(ocean_prox)
@@ -24,12 +26,16 @@ def include_dummies(x):
     for i, dummy in enumerate(np.unique(ocean_prox)):
         x[dummy] = dummy_ocean_prox[:, i]
 
+    for name in dummy_variables:
+        if name not in x:
+            x[name] = np.zeros(len(x))
+
+    x = x.sort_index(axis=1)
+
     return x
 
 
 class Network(nn.Module):
-    def _forward_unimplemented(self, *input: Any) -> None:
-        print("this shouldn't be called")
 
     def __init__(self, input_size, hiddenLayer1_size, hiddenLayer2_size, output_size):
         super(Network, self).__init__()
@@ -49,7 +55,7 @@ class Network(nn.Module):
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch=30, learning_rate=0.01, batch_size=100, device="cpu"):
+    def __init__(self, x, nb_epoch=30, learning_rate=0.001, batch_size=100, device="cpu"):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -140,9 +146,11 @@ class Regressor():
         if training:  # new preprocessing values required if training
             print("preprocess 3")
             self.scaler = preprocessing.MinMaxScaler()  # set scaler
+            print(f"scaler is {self.scaler}")
             print("preprocess 4")
             self.scaler = self.scaler.fit(x) # fit scaler to x and save for later
 
+        print(f"scaler is {self.scaler}")
         print("preprocess 5")
         x = self.scaler.transform(x) # transform x using scaler
         print("preprocess 6")
@@ -205,8 +213,8 @@ class Regressor():
 
         self.model = Network(self.input_size, self.hiddenLayer1_size, self.hiddenLayer2_size, self.output_size).to(self.device)
         loss_function = nn.MSELoss()
-        #optimiser = optim.SGD(model.parameters(), lr=self.learning_rate, momentum=0.9)
-        optimiser = optim.Adam(self.model.parameters())
+        #optimiser = optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
+        optimiser = optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
         x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=1, shuffle=True)
 
@@ -389,11 +397,13 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     #######################################################################
     #                       ** START OF YOUR CODE **
     #######################################################################
+    #X = include_dummies(x_train)
+    #X, Y = model._preprocessor(x_train, y_train, training=False)
 
     param_grid = {'x': [x_train],
-        'nb_epoch': [3, 10, 20],
-                  'learning_rate': [0.001, 0.0001],
-                  'batch_size': [10]}
+        'nb_epoch': [20],
+                  'learning_rate': [0.001, 0.002],
+                  'batch_size': [100]}
 
     grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, verbose=0, n_jobs=-1)
     # CV is defaulted to 5, used to calculate scores
@@ -453,15 +463,15 @@ def example_main():
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch=20)
+    regressor = Regressor(x_train, nb_epoch=1)
     regressor.fit(x_train, y_train)
-    save_regressor(regressor)
+    #save_regressor(regressor)
 
     # Error
-    error = regressor.score(x_train, y_train)
+    error = regressor.score(x_test, y_test)
     print("\nRegressor error: {}\n".format(error))
-
-    #RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
+    #print(x_train)
+    RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
 
 if __name__ == "__main__":
     example_main()
