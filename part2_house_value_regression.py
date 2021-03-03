@@ -1,6 +1,6 @@
 from typing import Any
 
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import sklearn
 import torch
 import torch.nn as nn
@@ -272,15 +272,15 @@ class Regressor():
                   .format(epoch + 1, self.nb_epoch, running_loss / len(train_loader), current_score))
             loss_list.append(running_loss / len(train_loader))
 
-        #fig, ax1 = plt.subplots()
-        #ax2 = ax1.twinx()
-        #ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
-        #ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
-        #ax1.set_ylabel("Average training loss per epoch")
-        #ax1.set_xlabel("Epoch")
-        #ax2.set_ylabel("Validation Score")
-        #fig.legend(loc=(.63, .75))
-        #plt.show()
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
+        ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
+        ax1.set_ylabel("Average training loss per epoch")
+        ax1.set_xlabel("Epoch")
+        ax2.set_ylabel("Validation Score")
+        fig.legend(loc=(.63, .75))
+        plt.show()
         return self
 
         #######################################################################
@@ -351,7 +351,7 @@ class Regressor():
                 predictions.append(outputs)
 
         print("score 3")
-        return mean_squared_error(Y, np.array(predictions))
+        return -mean_squared_error(Y, np.array(predictions))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -408,8 +408,8 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     print("hyper param search entered")
 
     param_grid = {'x': [x_train],
-        'nb_epoch': [20],
-                  'learning_rate': [0.001, 0.002],
+        'nb_epoch': [3, 10, 20],
+                  'learning_rate': [0.002],
                   'batch_size': [100]}
 
     grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, verbose=0, n_jobs=-1)
@@ -479,6 +479,11 @@ def example_main():
     print("\nRegressor error: {}\n".format(error))
     #print(x_train)
     RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
+    #regressor.predict(x_test)
+    #x_train, y_train = regressor._preprocessor(x_train, y_train, training=True)
+    #print(x_train)
+    #print(y_train)
+
 
 if __name__ == "__main__":
     example_main()
