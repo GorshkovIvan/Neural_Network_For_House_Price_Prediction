@@ -141,7 +141,7 @@ class Regressor():
             print("preprocess 3")
             self.scaler = preprocessing.MinMaxScaler()  # set scaler
             print("preprocess 4")
-            self.scaler.fit(x) # fit scaler to x and save for later
+            self.scaler = self.scaler.fit(x) # fit scaler to x and save for later
 
         print("preprocess 5")
         x = self.scaler.transform(x) # transform x using scaler
@@ -326,7 +326,7 @@ class Regressor():
 
         # change training back to False
         # change training back to False
-        X, Y = self._preprocessor(x, y=y, training=True)  # Do not forget
+        X, Y = self._preprocessor(x, y=y, training=f)  # Do not forget
         print("score 1")
 
         predictions = []
