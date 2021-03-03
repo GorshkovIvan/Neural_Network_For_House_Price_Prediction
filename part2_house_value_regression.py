@@ -1,6 +1,6 @@
 from typing import Any
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import sklearn
 import torch
 import torch.nn as nn
@@ -242,15 +242,15 @@ class Regressor():
                   .format(epoch + 1, self.nb_epoch, running_loss / len(train_loader), current_score))
             loss_list.append(running_loss / len(train_loader))
 
-        fig, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
-        ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
-        ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
-        ax1.set_ylabel("Average training loss per epoch")
-        ax1.set_xlabel("Epoch")
-        ax2.set_ylabel("Validation Score")
-        fig.legend(loc=(.63, .75))
-        plt.show()
+        #fig, ax1 = plt.subplots()
+        #ax2 = ax1.twinx()
+        #ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
+        #ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
+        #ax1.set_ylabel("Average training loss per epoch")
+        #ax1.set_xlabel("Epoch")
+        #ax2.set_ylabel("Validation Score")
+        #fig.legend(loc=(.63, .75))
+        #plt.show()
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -434,7 +434,7 @@ def example_main():
     save_regressor(regressor)
 
     # Error
-    error = regressor.score(x_test, y_train)
+    error = regressor.score(x_test, y_test)
     print("\nRegressor error: {}\n".format(error))
 
     #RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
