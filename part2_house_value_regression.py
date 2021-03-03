@@ -175,7 +175,7 @@ class Regressor():
             print("preprocess 10")
             y = y.fillna(0)
             print("preprocess 11")
-            y_tensor = torch.from_numpy(np.array(y)).float()
+            y_tensor = torch.from_numpy(y.to_numpy()).float()
             return x_tensor, y_tensor
 
         return x_tensor, None
@@ -324,9 +324,7 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        # change training back to False
-        # change training back to False
-        X, Y = self._preprocessor(x, y=y, training=f)  # Do not forget
+        X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
         print("score 1")
 
         predictions = []
