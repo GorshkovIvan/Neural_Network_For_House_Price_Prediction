@@ -55,7 +55,7 @@ class Network(nn.Module):
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, neurons = [200,200]):
+    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=200, layer2_neurons=200):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -76,15 +76,14 @@ class Regressor():
         X, _ = self._preprocessor(x, training=True)
         self.x = x
         # new code
-        self.hiddenLayer1_size = neurons[0]  # we set this ourselves
-        self.hiddenLayer2_size = neurons[1]
+        #self.hiddenLayer1_size = neurons[0]  # we set this ourselves
+        #self.hiddenLayer2_size = neurons[1]
 
 
         self.input_size = X.shape[1]
-        # old code
         self.output_size = 1
-        #self.hiddenLayer1_size = 200  # we set this ourselves
-        #self.hiddenLayer2_size = 200 # we set this ourselves
+        self.hiddenLayer1_size = layer1_neurons  # we set this ourselves
+        self.hiddenLayer2_size = layer2_neurons # we set this ourselves
 
         self.model = None
         self.nb_epoch = nb_epoch
@@ -292,7 +291,8 @@ class Regressor():
         #######################################################################
 
     def get_params(self, deep=True):
-        return {"x": self.x, "nb_epoch": self.nb_epoch, "learning_rate": self.learning_rate, "batch_size": self.batch_size}
+        return {"x": self.x, "nb_epoch": self.nb_epoch, "learning_rate": self.learning_rate,
+                "batch_size": self.batch_size, "layer1_neurons": self.hiddenLayer1_size, "layer2_neurons": self.hiddenLayer2_size}
 
     def set_params(self, **params):
         for parameter, value in params.items():
@@ -341,7 +341,16 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     param_grid = {'x': [x_train],
         'nb_epoch': [3, 10, 20],
                   'learning_rate': [0.002],
-                  'batch_size': [100]}
+                  'batch_size': [100],
+                  "layer1_neurons": [100, 200, 300],
+                  "layer2_neurons": [100, 200, 300]}
+
+    param_grid = {'x': [x_train],
+        'nb_epoch': [10, 20],
+                  'learning_rate': [0.05, 0.002],
+                  'batch_size': [100, 200],
+                  "layer1_neurons": [100, 200],
+                  "layer2_neurons": [100, 200]}
 
     grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, verbose=0, n_jobs=-1)
     # CV is defaulted to 5, used to calculate scores
@@ -408,7 +417,7 @@ def example_main():
     error = regressor.score(x_test, y_test)
     print("\nRegressor error: {}\n".format(error))
 
-    #RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
+    RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
     #regressor.predict(x_test)
     #x_train, y_train = regressor._preprocessor(x_train, y_train, training=True)
 
