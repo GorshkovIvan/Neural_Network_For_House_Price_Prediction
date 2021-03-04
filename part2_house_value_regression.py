@@ -200,7 +200,7 @@ class Regressor():
             current_score = self.score(x_val, y_val)
             score_list.append(current_score)
             if current_score < previous_score:
-                loss_list.append(current_score)
+                loss_list.append(loss_list[-1])
                 #self.model = self.prev_model
                 break
             previous_score = current_score
@@ -231,7 +231,7 @@ class Regressor():
         ax1.set_ylabel("Average training loss per epoch")
         ax1.set_xlabel("Epoch")
         ax2.set_ylabel("Validation Score")
-        fig.legend(loc=(.63, .75))
+        fig.legend(loc=(.63, .7))
         plt.show()
         return self
 
@@ -482,7 +482,7 @@ def example_main():
     # to make sure the model isn't overfitting
     regressor = Regressor(x_train, nb_epoch=120)
     regressor.fit(x_train, y_train)
-    #save_regressor(regressor)
+    save_regressor(regressor)
 
     # Error
     #error = regressor.score(x_test, y_test)
