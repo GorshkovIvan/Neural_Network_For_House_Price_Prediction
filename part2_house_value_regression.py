@@ -9,6 +9,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import sys
+import random
 from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error, classification_report
 from sklearn.model_selection import train_test_split
@@ -33,28 +34,6 @@ def include_dummies(x):
     x = x.sort_index(axis=1)
 
     return x
-
-
-def drop_rows_with_missing_values(x, y=None):
-
-    if y is not None:
-        result = pd.concat([x, y], axis = 1)
-        result.dropna()
-
-        print("Before x")
-        print(x.shape)
-        x = result.iloc[:, :-1]
-        print("After x")
-        print(x.shape)
-        print("After")
-        print(y)
-        print(y.shape)
-        y = result.iloc[:, -1:]
-
-    if y is None:
-        x = x.dropna()
-
-    return x, y
 
 
 class Network(nn.Module):
@@ -147,11 +126,6 @@ class Regressor():
         # Encoding textual data using One Hot
 
         x = include_dummies(x)
-        print(f"shape of x in preprocessor just after include_dummies is {x.shape}")
-        x, y = drop_rows_with_missing_values(x, y)
-        if isinstance(y, pd.DataFrame):
-            print(f"Shape of y after drop_rows is: {y.shape}")
-        print(f"shape of x in preprocessor is {x.shape}")
 
         # Scaling the data using Min Max
         column_names = x.columns.tolist()
@@ -167,16 +141,12 @@ class Regressor():
 
 
         # default value of 0 is  NOT final - set to proper default value
-        #x = x.fillna(0)
+        x = x.fillna(random.uniform(0, 1))
         x_tensor = torch.from_numpy(np.array(x)).float()
-
-        if isinstance(y, pd.DataFrame):
-            print(f"Shape of y is: {y.shape}")
-
 
         # Preprocess Y
         if y is not None:
-            #y = y.fillna(0)
+            y = y.fillna(random.uniform(0, 1))
             y_tensor = torch.from_numpy(y.to_numpy()).float()
 
         return x_tensor, (y_tensor if isinstance(y, pd.DataFrame) else None)
@@ -213,8 +183,6 @@ class Regressor():
 
         # His code
         X, Y = self._preprocessor(x_train, y_train, training=True)  # Do not forget
-        print(f"shape of x_train is {x_train.shape}") #<<< 13208 bruh
-        print(f"shape of y_train is {y_train.shape}") # so preprocessor is causing the two dropped rows
 
 
         # Split X, Y into x_train, x_val and y_train, y_val
@@ -256,15 +224,15 @@ class Regressor():
             loss_list.append(running_loss / len(train_loader))
 
 
-        #fig, ax1 = plt.subplots()
-        #ax2 = ax1.twinx()
-        #ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
-        #ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
-        #ax1.set_ylabel("Average training loss per epoch")
-        #ax1.set_xlabel("Epoch")
-        #ax2.set_ylabel("Validation Score")
-        #fig.legend(loc=(.63, .75))
-        #plt.show()
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
+        ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
+        ax1.set_ylabel("Average training loss per epoch")
+        ax1.set_xlabel("Epoch")
+        ax2.set_ylabel("Validation Score")
+        fig.legend(loc=(.63, .75))
+        plt.show()
         return self
 
         #######################################################################
@@ -324,10 +292,6 @@ class Regressor():
             for i, value in enumerate(X):
                 outputs = self.model(value)
                 predictions = np.append(predictions, outputs)
-        print("nan check")
-        torch.set_printoptions(threshold=10_000)
-        for i, k in enumerate(predictions):
-            print(predictions)
 
         return -mean_squared_error(Y, predictions)
 
