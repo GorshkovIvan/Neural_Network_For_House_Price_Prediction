@@ -1,6 +1,6 @@
 from typing import Any
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import sklearn
 import torch
 import torch.nn as nn
@@ -55,7 +55,7 @@ class Network(nn.Module):
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch=30, learning_rate=0.001, batch_size=100, device="cpu"):
+    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, device="cpu"):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -136,25 +136,25 @@ class Regressor():
         print("shape of x after one-hot")
         print(x.shape)"""
 
-        print("preprocess 1")
+       # print("preprocess 1")
         x = include_dummies(x)
 
         # Scaling the data using Min Max
-        print("preprocess 2")
+        #print("preprocess 2")
         column_names = x.columns.tolist()
         x = x.values  # returns a numpy array
 
         if training:  # new preprocessing values required if training
-            print("preprocess 3")
+            #print("preprocess 3")
             self.scaler = preprocessing.MinMaxScaler()  # set scaler
-            print(f"scaler is {self.scaler}")
-            print("preprocess 4")
+            #print(f"scaler is {self.scaler}")
+            #print("preprocess 4")
             self.scaler = self.scaler.fit(x) # fit scaler to x and save for later
 
-        print(f"scaler is {self.scaler}")
-        print("preprocess 5")
+        #print(f"scaler is {self.scaler}")
+        #print("preprocess 5")
         x = self.scaler.transform(x) # transform x using scaler
-        print("preprocess 6")
+        #print("preprocess 6")
         x = pd.DataFrame(x, columns=column_names) # turn x into dataframe
         """
         dummies = ['<1H OCEAN', 'INLAND', 'ISLAND', 'NEAR BAY', 'NEAR OCEAN']
@@ -173,19 +173,19 @@ class Regressor():
         """
 
         # default value of 0 is  NOT final - set to proper default value
-        print("preprocess 7")
+        #print("preprocess 7")
         x = x.fillna(0)
-        print("preprocess 8")
+       # print("preprocess 8")
         x_tensor = torch.from_numpy(np.array(x)).float()
 
         # Preprocess Y
-        print("preprocess 9")
+       # print("preprocess 9")
         if y is not None:
-            print("preprocess 10")
+            #print("preprocess 10")
             y = y.fillna(0)
-            print("preprocess 11")
+           # print("preprocess 11")
             y_tensor = torch.from_numpy(y.to_numpy()).float()
-            print("preprocess 12")
+            #print("preprocess 12")
 
         return x_tensor, (y_tensor if isinstance(y, pd.DataFrame) else None)
 
@@ -220,7 +220,7 @@ class Regressor():
         x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=1, shuffle=True)
 
         # His code
-        print("fit preprocessor")
+        #print("fit preprocessor")
         X, Y = self._preprocessor(x_train, y_train, training=True)  # Do not forget
 
         # Split X, Y into x_train, x_val and y_train, y_val
@@ -231,40 +231,40 @@ class Regressor():
         # Our code
         loss_list = []
         score_list = []
-        print("1")
-        previous_score = sys.maxsize
-        print("2")
+        #print("1")
+        previous_score = -sys.maxsize
+        #print("2")
         for epoch in range(self.nb_epoch):
-            print("3")
+            #print("3")
             train_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
             running_loss = 0.0
-            print("4")
+            #print("4")
             # Calculate validation mse score
             current_score = self.score(x_val, y_val)
-            print("5")
+            #print("5")
             score_list.append(current_score)
-            if current_score > previous_score:
-                loss_list.append(loss_list[-1])
+            if current_score < previous_score:
+                #loss_list.append(previous_score)
                 break
             previous_score = current_score
-            print("6")
+            #print("6")
             for i, (inputs, labels) in enumerate(train_loader, 0):
                 # Forward pass
-                print("7")
+                #print("7")
                 optimiser.zero_grad()
-                print("8")
+                #print("8")
                 output = self.model(inputs)
 
                 # Calculate Loss
-                print("9")
+                #print("9")
                 loss = loss_function(output, labels)
-                print("10")
+                #print("10")
                 loss.backward()
-                print("11")
+                #print("11")
 
                 # Update parameters
                 optimiser.step()
-                print("12")
+                #print("12")
 
                 running_loss += loss.item()
 
@@ -272,15 +272,15 @@ class Regressor():
                   .format(epoch + 1, self.nb_epoch, running_loss / len(train_loader), current_score))
             loss_list.append(running_loss / len(train_loader))
 
-        fig, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
-        ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
-        ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
-        ax1.set_ylabel("Average training loss per epoch")
-        ax1.set_xlabel("Epoch")
-        ax2.set_ylabel("Validation Score")
-        fig.legend(loc=(.63, .75))
-        plt.show()
+        #fig, ax1 = plt.subplots()
+        #ax2 = ax1.twinx()
+        #ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
+        #ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
+        #ax1.set_ylabel("Average training loss per epoch")
+        #ax1.set_xlabel("Epoch")
+        #ax2.set_ylabel("Validation Score")
+        #fig.legend(loc=(.63, .75))
+        #plt.show()
         return self
 
         #######################################################################
@@ -303,16 +303,16 @@ class Regressor():
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print("Predict processor")
+        #print("Predict processor")
         X, _ = self._preprocessor(x, training=False)  # Do not forget
 
         predictions = []
-        print("predictions 1")
+        #print("predictions 1")
         with torch.no_grad():
             for i, value in enumerate(X):
-                print("predictions 2")
+                #print("predictions 2")
                 outputs = self.model(value)
-                print("predictions 3")
+                #print("predictions 3")
                 predictions.append(outputs)
         return np.array(predictions)
 
@@ -337,21 +337,21 @@ class Regressor():
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-        print("score preprocessor")
+        #print("score preprocessor")
         X, Y = self._preprocessor(x, y=y, training=False)  # Do not forget
-        print("score 1")
+        #print("score 1")
 
         predictions = []
         with torch.no_grad():
-            print("score 2")
+            #print("score 2")
             for i, value in enumerate(X):
-                print("score loop 1")
+                #print("score loop 1")
                 outputs = self.model(value)
-                print("score loop 2")
+                #print("score loop 2")
                 predictions.append(outputs)
 
-        print("score 3")
-        return -mean_squared_error(Y, np.array(predictions))
+        #print("score 3")
+        return -mean_squared_error(Y, np.array(predictions, dtype="object"))
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -470,15 +470,15 @@ def example_main():
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch=1)
+    regressor = Regressor(x_train, nb_epoch=100)
     regressor.fit(x_train, y_train)
-    #save_regressor(regressor)
+    save_regressor(regressor)
 
     # Error
     error = regressor.score(x_test, y_test)
     print("\nRegressor error: {}\n".format(error))
     #print(x_train)
-    RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
+    #RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
     #regressor.predict(x_test)
     #x_train, y_train = regressor._preprocessor(x_train, y_train, training=True)
     #print(x_train)
