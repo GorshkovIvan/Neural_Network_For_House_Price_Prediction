@@ -35,6 +35,28 @@ def include_dummies(x):
     return x
 
 
+def drop_rows_with_missing_values(x, y=None):
+
+    if y is not None:
+        result = pd.concat([x, y], axis = 1)
+        result.dropna()
+
+        print("Before x")
+        print(x.shape)
+        x = result.iloc[:, :-1]
+        print("After x")
+        print(x.shape)
+        print("After")
+        print(y)
+        print(y.shape)
+        y = result.iloc[:, -1:]
+
+    if y is None:
+        x = x.dropna()
+
+    return x, y
+
+
 class Network(nn.Module):
 
     def __init__(self, input_size, hiddenLayer1_size, hiddenLayer2_size, output_size):
@@ -55,7 +77,8 @@ class Network(nn.Module):
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=200, layer2_neurons=200):
+    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=200,
+                 layer2_neurons=200):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -86,6 +109,7 @@ class Regressor():
         self.hiddenLayer2_size = layer2_neurons # we set this ourselves
 
         self.model = None
+        self.prev_model = None
         self.nb_epoch = nb_epoch
         self.learning_rate = learning_rate
         self.batch_size = batch_size
@@ -121,7 +145,13 @@ class Regressor():
 
         # Preprocess x
         # Encoding textual data using One Hot
+
         x = include_dummies(x)
+        print(f"shape of x in preprocessor just after include_dummies is {x.shape}")
+        x, y = drop_rows_with_missing_values(x, y)
+        if isinstance(y, pd.DataFrame):
+            print(f"Shape of y after drop_rows is: {y.shape}")
+        print(f"shape of x in preprocessor is {x.shape}")
 
         # Scaling the data using Min Max
         column_names = x.columns.tolist()
@@ -134,13 +164,19 @@ class Regressor():
         x = self.scaler.transform(x) # transform x using scaler
         x = pd.DataFrame(x, columns=column_names) # turn x into dataframe
 
+
+
         # default value of 0 is  NOT final - set to proper default value
-        x = x.fillna(0)
+        #x = x.fillna(0)
         x_tensor = torch.from_numpy(np.array(x)).float()
+
+        if isinstance(y, pd.DataFrame):
+            print(f"Shape of y is: {y.shape}")
+
 
         # Preprocess Y
         if y is not None:
-            y = y.fillna(0)
+            #y = y.fillna(0)
             y_tensor = torch.from_numpy(y.to_numpy()).float()
 
         return x_tensor, (y_tensor if isinstance(y, pd.DataFrame) else None)
@@ -173,13 +209,15 @@ class Regressor():
         #optimiser = optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
         optimiser = optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
-        x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=1, shuffle=True)
+        x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=1/9, random_state=4, shuffle=True)
 
         # His code
         X, Y = self._preprocessor(x_train, y_train, training=True)  # Do not forget
+        print(f"shape of x_train is {x_train.shape}") #<<< 13208 bruh
+        print(f"shape of y_train is {y_train.shape}") # so preprocessor is causing the two dropped rows
+
 
         # Split X, Y into x_train, x_val and y_train, y_val
-
         dataset = torch.utils.data.TensorDataset(X, Y)
         print("Model with: Epoch {}, Learning Rate {} and Batch Size {}" .format(self.nb_epoch, self.learning_rate, self.batch_size))
 
@@ -195,8 +233,10 @@ class Regressor():
             score_list.append(current_score)
             if current_score < previous_score:
                 loss_list.append(current_score)
+                #self.model = self.prev_model
                 break
             previous_score = current_score
+            #self.prev_model = self.model
             for i, (inputs, labels) in enumerate(train_loader, 0):
                 # Forward pass
                 optimiser.zero_grad()
@@ -214,6 +254,7 @@ class Regressor():
             print("Epoch [{}/{}], Average Training Loss: {}, Validation Loss: {}"
                   .format(epoch + 1, self.nb_epoch, running_loss / len(train_loader), current_score))
             loss_list.append(running_loss / len(train_loader))
+
 
         #fig, ax1 = plt.subplots()
         #ax2 = ax1.twinx()
@@ -246,7 +287,6 @@ class Regressor():
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
-
         X, _ = self._preprocessor(x, training=False)  # Do not forget
 
         predictions = []
@@ -254,7 +294,7 @@ class Regressor():
             for i, value in enumerate(X):
                 outputs = self.model(value)
                 predictions = np.append(predictions, outputs)
-        return np.array(predictions)
+        return predictions
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -284,6 +324,11 @@ class Regressor():
             for i, value in enumerate(X):
                 outputs = self.model(value)
                 predictions = np.append(predictions, outputs)
+        print("nan check")
+        torch.set_printoptions(threshold=10_000)
+        for i, k in enumerate(predictions):
+            print(predictions)
+
         return -mean_squared_error(Y, predictions)
 
         #######################################################################
@@ -339,21 +384,21 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     #######################################################################
 
     param_grid = {'x': [x_train],
-        'nb_epoch': [3, 10, 20],
-                  'learning_rate': [0.002],
-                  'batch_size': [100],
-                  "layer1_neurons": [100, 200, 300],
-                  "layer2_neurons": [100, 200, 300]}
+        'nb_epoch': [250],
+                  'learning_rate': [0.1, 0.002, 0.0005, 0.00001],
+                  'batch_size': [10, 50, 100, 300],
+                  'layer1_neurons': [5, 50, 100, 300],
+                  'layer2_neurons': [5, 50, 100, 300]}
 
     param_grid = {'x': [x_train],
-        'nb_epoch': [10, 20],
-                  'learning_rate': [0.05, 0.002],
-                  'batch_size': [100, 200],
-                  "layer1_neurons": [100, 200],
-                  "layer2_neurons": [100, 200]}
+                  'nb_epoch': [10],
+                  'learning_rate': [0.002],
+                  'batch_size': [100],
+                  'layer1_neurons': [5],
+                  'layer2_neurons': [5]}
 
-    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=4, verbose=0,
-                                                n_jobs=-1, return_train_score=False)
+    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=5, verbose=1,
+                                                n_jobs=-1)
     # CV is defaulted to 5, used to calculate scores
 
     # fitting the model for grid search
@@ -364,10 +409,10 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
 
     print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
     # predicting x_test using the best scoring model
-    y_pred = grid_result.predict(x_test)
-    print(y_pred)
+
+    MSE = grid_result.score(x_test, y_test)
     print("Mean Squared Error on test set")
-    print(mean_squared_error(y_pred, y_test))
+    print(MSE)
 
 
 
@@ -416,6 +461,7 @@ def plot_search_results(grid):
     masks=[]
     masks_names= list(grid.best_params_.keys())
     masks_names.remove("x")
+    #masks_names.remove("nb_epochs")
 
     print(grid.best_params_.keys())
     print(grid.best_params_.items())
@@ -429,9 +475,8 @@ def plot_search_results(grid):
     params=grid.param_grid
 
     # Plotting results
-    fig, ax = plt.subplots(1,len(params) - 1,sharex='none', sharey='all',figsize=(20,5))
-    fig.suptitle('Score per parameter')
-    fig.text(0.04, 0.5, 'MEAN SCORE', va='center', rotation='vertical')
+    fig, ax = plt.subplots(1,len(params) - 2,sharex='none', sharey='all',figsize=(20,5))
+    fig.text(0.09, 0.5, 'Mean Score', va='center', rotation='vertical')
     for i, p in enumerate(masks_names):
         m = np.stack(masks[:i] + masks[i+1:])
         best_parms_mask = m.all(axis=0)
@@ -441,9 +486,12 @@ def plot_search_results(grid):
         e_1 = np.array(stds_test[best_index])
         #y_2 = np.array(means_train[best_index])
         #e_2 = np.array(stds_train[best_index])
-        ax[i].errorbar(x, y_1, e_1, linestyle='--', marker='o', label='test')
+        if (i == 4):
+            break
+        ax[i].errorbar(x, y_1, e_1, linestyle='--', marker='o')
         #ax[i].errorbar(x, y_2, e_2, linestyle='-', marker='^',label='train' )
-        ax[i].set_xlabel(p.upper())
+        aoeu = ["Batch size", "Layer 1 neurons", "Layer 2 neurons", "Learning rate"]
+        ax[i].set_xlabel(aoeu[i])
 
     plt.legend()
     plt.show()
@@ -462,13 +510,13 @@ def example_main():
     y = data.loc[:, [output_label]]
 
     # Our code
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=3, shuffle=True)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1, random_state=3, shuffle=True)
 
     # Training
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch=1)
+    regressor = Regressor(x_train, nb_epoch=120)
     regressor.fit(x_train, y_train)
     #save_regressor(regressor)
 
@@ -476,7 +524,7 @@ def example_main():
     #error = regressor.score(x_test, y_test)
     #print("\nRegressor error: {}\n".format(error))
 
-    RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
+    #RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
     #regressor.predict(x_test)
     #x_train, y_train = regressor._preprocessor(x_train, y_train, training=True)
 
