@@ -224,15 +224,15 @@ class Regressor():
             loss_list.append(running_loss / len(train_loader))
 
 
-        fig, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
-        ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
-        ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
-        ax1.set_ylabel("Average training loss per epoch")
-        ax1.set_xlabel("Epoch")
-        ax2.set_ylabel("Validation Score")
-        fig.legend(loc=(.63, .7))
-        plt.show()
+        #fig, ax1 = plt.subplots()
+        #ax2 = ax1.twinx()
+        #ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
+        #ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
+        #ax1.set_ylabel("Average training loss per epoch")
+        #ax1.set_xlabel("Epoch")
+        #ax2.set_ylabel("Validation Score")
+        #fig.legend(loc=(.63, .7))
+        #plt.show()
         return self
 
         #######################################################################
@@ -355,11 +355,11 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
                   'layer2_neurons': [5, 50, 100, 300]}
 
     param_grid = {'x': [x_train],
-                  'nb_epoch': [10],
+                  'nb_epoch': [30],
                   'learning_rate': [0.002],
                   'batch_size': [100],
-                  'layer1_neurons': [5],
-                  'layer2_neurons': [5]}
+                  'layer1_neurons': [200],
+                  'layer2_neurons': [200]}
 
     grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=5, verbose=1,
                                                 n_jobs=-1)
@@ -377,35 +377,15 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     MSE = grid_result.score(x_test, y_test)
     print("Mean Squared Error on test set")
     print(MSE)
-
-
-
-
-    #means = grid_result.cv_results_['mean_test_score']
-    #stds = grid_result.cv_results_['std_test_score']
-    #params = grid_result.cv_results_['params']
-
-    #for mean, stdev, param in zip(means, stds, params):
-        #print("%f (%f) with: %r" % (mean, stdev, param))
-
-
-
-    # fitting the model for grid search
-    #grid.fit(x_train, y_train)
-
-    # print best parameter after tuning
-    #print(grid.best_params_)
-    #grid_predictions = grid.predict(x_test)
-
-    # print classification report
-    #print(classification_report(y_test, grid_predictions))
+    print("R Squared Value on test set")
+    y_pred = grid_result.predict(x_test)
+    print(sklearn.metrics.r2_score(y_test, y_pred))
 
     return grid_result.best_params_ # Return the chosen hyper parameters
 
     #######################################################################
     #                       ** END OF YOUR CODE **
     #######################################################################
-
 
 def plot_search_results(grid):
     """
@@ -448,8 +428,6 @@ def plot_search_results(grid):
         x = np.array(params[p])
         y_1 = np.array(means_test[best_index])
         e_1 = np.array(stds_test[best_index])
-        #y_2 = np.array(means_train[best_index])
-        #e_2 = np.array(stds_train[best_index])
         if (i == 4):
             break
         ax[i].errorbar(x, y_1, e_1, linestyle='--', marker='o')
@@ -480,15 +458,16 @@ def example_main():
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch=120)
+    regressor = Regressor(x_train, nb_epoch=50)
     regressor.fit(x_train, y_train)
-    save_regressor(regressor)
+    #save_regressor(regressor)
 
     # Error
     #error = regressor.score(x_test, y_test)
     #print("\nRegressor error: {}\n".format(error))
 
-    #RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
+    RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
+
     #regressor.predict(x_test)
     #x_train, y_train = regressor._preprocessor(x_train, y_train, training=True)
 
