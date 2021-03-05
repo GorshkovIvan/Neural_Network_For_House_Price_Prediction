@@ -1,6 +1,5 @@
 from typing import Any
 
-import matplotlib.pyplot as plt
 import sklearn
 import torch
 import torch.nn as nn
@@ -11,7 +10,7 @@ import pandas as pd
 import sys
 import random
 from sklearn import preprocessing
-from sklearn.metrics import mean_squared_error, classification_report
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
 
@@ -56,8 +55,8 @@ class Network(nn.Module):
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=200,
-                 layer2_neurons=200):
+    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=50,
+                 layer2_neurons=50):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -77,10 +76,6 @@ class Regressor():
 
         X, _ = self._preprocessor(x, training=True)
         self.x = x
-        # new code
-        #self.hiddenLayer1_size = neurons[0]  # we set this ourselves
-        #self.hiddenLayer2_size = neurons[1]
-
 
         self.input_size = X.shape[1]
         self.output_size = 1
@@ -122,29 +117,26 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        # Preprocess x
-        # Encoding textual data using One Hot
-
+        # turn the categorical variables into dummies using One-Hot Encoding
         x = include_dummies(x)
 
         # Scaling the data using Min Max
         column_names = x.columns.tolist()
-        x = x.values  # returns a numpy array
+        x = x.values
 
-        if training:  # new preprocessing values required if training
-            self.scaler = preprocessing.MinMaxScaler()  # set scaler
-            self.scaler = self.scaler.fit(x) # fit scaler to x and save for later
+        # new preprocessing values required if training
+        if training:
+            self.scaler = preprocessing.MinMaxScaler()
+            self.scaler = self.scaler.fit(x)
 
-        x = self.scaler.transform(x) # transform x using scaler
-        x = pd.DataFrame(x, columns=column_names) # turn x into dataframe
+        x = self.scaler.transform(x)
+        x = pd.DataFrame(x, columns=column_names)
 
-
-
-        # default value of 0 is  NOT final - set to proper default value
+        # fill in NaN x values with a random uniform distribution U~[0,1]
         x = x.fillna(random.uniform(0, 1))
         x_tensor = torch.from_numpy(np.array(x)).float()
 
-        # Preprocess Y
+        # fill in NaN y values with a random uniform distribution U~[0,1]
         if y is not None:
             y = y.fillna(random.uniform(0, 1))
             y_tensor = torch.from_numpy(y.to_numpy()).float()
@@ -176,20 +168,14 @@ class Regressor():
 
         self.model = Network(self.input_size, self.hiddenLayer1_size, self.hiddenLayer2_size, self.output_size).to("cpu")
         loss_function = nn.MSELoss()
-        #optimiser = optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=0.9)
         optimiser = optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
         x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=1/9, random_state=4, shuffle=True)
-
-        # His code
         X, Y = self._preprocessor(x_train, y_train, training=True)  # Do not forget
-
 
         # Split X, Y into x_train, x_val and y_train, y_val
         dataset = torch.utils.data.TensorDataset(X, Y)
-        print("Model with: Epoch {}, Learning Rate {} and Batch Size {}" .format(self.nb_epoch, self.learning_rate, self.batch_size))
 
-        # Our code
         loss_list = []
         score_list = []
         previous_score = -sys.maxsize
@@ -201,10 +187,11 @@ class Regressor():
             score_list.append(current_score)
             if current_score < previous_score:
                 loss_list.append(loss_list[-1])
-                #self.model = self.prev_model
+                self.model = self.prev_model
                 break
+
             previous_score = current_score
-            #self.prev_model = self.model
+            self.prev_model = self.model
             for i, (inputs, labels) in enumerate(train_loader, 0):
                 # Forward pass
                 optimiser.zero_grad()
@@ -223,16 +210,6 @@ class Regressor():
                   .format(epoch + 1, self.nb_epoch, running_loss / len(train_loader), current_score))
             loss_list.append(running_loss / len(train_loader))
 
-
-        #fig, ax1 = plt.subplots()
-        #ax2 = ax1.twinx()
-        #ax1.plot(range(len(loss_list)), loss_list, 'b', label="Training Loss")
-        #ax2.plot(range(len(loss_list)), score_list, 'r', label="Validation Score")
-        #ax1.set_ylabel("Average training loss per epoch")
-        #ax1.set_xlabel("Epoch")
-        #ax2.set_ylabel("Validation Score")
-        #fig.legend(loc=(.63, .7))
-        #plt.show()
         return self
 
         #######################################################################
@@ -262,6 +239,7 @@ class Regressor():
             for i, value in enumerate(X):
                 outputs = self.model(value)
                 predictions = np.append(predictions, outputs)
+
         return predictions
 
         #######################################################################
@@ -301,12 +279,14 @@ class Regressor():
 
     def get_params(self, deep=True):
         return {"x": self.x, "nb_epoch": self.nb_epoch, "learning_rate": self.learning_rate,
-                "batch_size": self.batch_size, "layer1_neurons": self.hiddenLayer1_size, "layer2_neurons": self.hiddenLayer2_size}
+                "batch_size": self.batch_size, "layer1_neurons": self.hiddenLayer1_size,
+                "layer2_neurons": self.hiddenLayer2_size}
 
     def set_params(self, **params):
         for parameter, value in params.items():
             setattr(self, parameter, value)
         return self
+
 
 def save_regressor(trained_model):
     """ 
@@ -348,95 +328,22 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     #######################################################################
 
     param_grid = {'x': [x_train],
-        'nb_epoch': [250],
-                  'learning_rate': [0.1, 0.002, 0.0005, 0.00001],
-                  'batch_size': [10, 50, 100, 300],
-                  'layer1_neurons': [5, 50, 100, 300],
-                  'layer2_neurons': [5, 50, 100, 300]}
+                  'nb_epoch': [50],
+                  'learning_rate': [0.1, 0.002, 0.0005],
+                  'batch_size': [10, 50, 100],
+                  'layer1_neurons': [5, 25, 50],
+                  'layer2_neurons': [5, 25, 50]}
 
-    param_grid = {'x': [x_train],
-                  'nb_epoch': [30],
-                  'learning_rate': [0.002],
-                  'batch_size': [100],
-                  'layer1_neurons': [200],
-                  'layer2_neurons': [200]}
-
-    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=5, verbose=1,
-                                                n_jobs=-1)
-    # CV is defaulted to 5, used to calculate scores
+    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=4, n_jobs=-1)
 
     # fitting the model for grid search
     grid_result = grid.fit(x_train, y_train)
 
-    # plot results
-    plot_search_results(grid_result)
-
-    print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
-    # predicting x_test using the best scoring model
-
-    MSE = grid_result.score(x_test, y_test)
-    print("Mean Squared Error on test set")
-    print(MSE)
-    print("R Squared Value on test set")
-    y_pred = grid_result.predict(x_test)
-    print(sklearn.metrics.r2_score(y_test, y_pred))
-
-    return grid_result.best_params_ # Return the chosen hyper parameters
+    return grid_result.best_params_
 
     #######################################################################
     #                       ** END OF YOUR CODE **
     #######################################################################
-
-def plot_search_results(grid):
-    """
-    Params:
-        grid: A trained GridSearchCV object.
-    """
-    ## Results from grid search
-    results = grid.cv_results_
-    print(results.keys())
-
-    means_test = results['mean_test_score']
-    stds_test = results['std_test_score']
-    #means_train = results['mean_train_score']
-    #stds_train = results['std_train_score']
-
-    ## Getting indexes of values per hyper-parameter
-    masks=[]
-    masks_names= list(grid.best_params_.keys())
-    masks_names.remove("x")
-    #masks_names.remove("nb_epochs")
-
-    print(grid.best_params_.keys())
-    print(grid.best_params_.items())
-
-    for p_k, p_v in grid.best_params_.items():
-        if p_k != "x":
-            masks.append(list(results['param_'+p_k].data==p_v))
-
-
-
-    params=grid.param_grid
-
-    # Plotting results
-    fig, ax = plt.subplots(1,len(params) - 2,sharex='none', sharey='all',figsize=(20,5))
-    fig.text(0.09, 0.5, 'Mean Score', va='center', rotation='vertical')
-    for i, p in enumerate(masks_names):
-        m = np.stack(masks[:i] + masks[i+1:])
-        best_parms_mask = m.all(axis=0)
-        best_index = np.where(best_parms_mask)[0]
-        x = np.array(params[p])
-        y_1 = np.array(means_test[best_index])
-        e_1 = np.array(stds_test[best_index])
-        if (i == 4):
-            break
-        ax[i].errorbar(x, y_1, e_1, linestyle='--', marker='o')
-        #ax[i].errorbar(x, y_2, e_2, linestyle='-', marker='^',label='train' )
-        aoeu = ["Batch size", "Layer 1 neurons", "Layer 2 neurons", "Learning rate"]
-        ax[i].set_xlabel(aoeu[i])
-
-    plt.legend()
-    plt.show()
 
 
 def example_main():
@@ -447,32 +354,24 @@ def example_main():
     # But remember that LabTS tests take Pandas Dataframe as inputs
     data = pd.read_csv("housing.csv")
 
-    # Spliting input and output
+    # Splitting input and output
     x = data.loc[:, data.columns != output_label]
     y = data.loc[:, [output_label]]
 
-    # Our code
+    # Splitting dataset into train and test sets
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1, random_state=3, shuffle=True)
 
-    # Training
-    # This example trains on the whole available dataset. 
-    # You probably want to separate some held-out data 
-    # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch=50)
+    # Training the regressor only on the training dataset
+    regressor = Regressor(x_train, nb_epoch=10)
     regressor.fit(x_train, y_train)
-    #save_regressor(regressor)
+    save_regressor(regressor)
 
-    # Error
-    #error = regressor.score(x_test, y_test)
-    #print("\nRegressor error: {}\n".format(error))
-
-    RegressorHyperParameterSearch(regressor, x_train, y_train, x_test, y_test)
-
-    #regressor.predict(x_test)
-    #x_train, y_train = regressor._preprocessor(x_train, y_train, training=True)
-
-
+    # Evaluation
+    # Printing out the MSE of our regressor evaluated using y_test
+    error = regressor.score(x_test, y_test)
+    print("\nRegressor error: {}\n".format(error))
 
 
 if __name__ == "__main__":
     example_main()
+
