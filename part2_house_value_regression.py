@@ -185,11 +185,11 @@ class Regressor():
             score_list.append(current_score)
             if current_score < previous_score:
                 loss_list.append(loss_list[-1])
-                self.model = self.prev_model
+                #self.model = self.prev_model
                 break
 
             previous_score = current_score
-            self.prev_model = self.model
+            #self.prev_model = self.model
             for i, (inputs, labels) in enumerate(train_loader, 0):
                 # Forward pass
                 optimiser.zero_grad()
