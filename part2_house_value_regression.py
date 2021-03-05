@@ -1,5 +1,3 @@
-from typing import Any
-
 import sklearn
 import torch
 import torch.nn as nn
@@ -374,4 +372,3 @@ def example_main():
 
 if __name__ == "__main__":
     example_main()
-
