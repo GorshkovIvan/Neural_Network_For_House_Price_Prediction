@@ -13,6 +13,7 @@ import random
 from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error, classification_report
 from sklearn.model_selection import train_test_split
+from mlplot.evaluation import RegressionEvaluation
 
 
 def include_dummies(x):
@@ -56,8 +57,7 @@ class Network(nn.Module):
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=200,
-                 layer2_neurons=200):
+    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=200, layer2_neurons=200):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -85,7 +85,7 @@ class Regressor():
         self.input_size = X.shape[1]
         self.output_size = 1
         self.hiddenLayer1_size = layer1_neurons  # we set this ourselves
-        self.hiddenLayer2_size = layer2_neurons # we set this ourselves
+        self.hiddenLayer2_size = layer2_neurons
 
         self.model = None
         self.prev_model = None
@@ -301,7 +301,8 @@ class Regressor():
 
     def get_params(self, deep=True):
         return {"x": self.x, "nb_epoch": self.nb_epoch, "learning_rate": self.learning_rate,
-                "batch_size": self.batch_size, "layer1_neurons": self.hiddenLayer1_size, "layer2_neurons": self.hiddenLayer2_size}
+                "batch_size": self.batch_size, "layer1_neurons": self.hiddenLayer1_size,
+                "layer2_neurons": self.hiddenLayer2_size}
 
     def set_params(self, **params):
         for parameter, value in params.items():
@@ -346,22 +347,26 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     #######################################################################
     #                       ** START OF YOUR CODE **
     #######################################################################
-
     param_grid = {'x': [x_train],
-        'nb_epoch': [250],
-                  'learning_rate': [0.1, 0.002, 0.0005, 0.00001],
-                  'batch_size': [10, 50, 100, 300],
-                  'layer1_neurons': [5, 50, 100, 300],
-                  'layer2_neurons': [5, 50, 100, 300]}
-
-    param_grid = {'x': [x_train],
-                  'nb_epoch': [30],
+                  'nb_epoch': [1],
                   'learning_rate': [0.002],
                   'batch_size': [100],
-                  'layer1_neurons': [200],
-                  'layer2_neurons': [200]}
+                  'layer1_neurons': [25],
+                  'layer2_neurons': [25]}
 
-    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=5, verbose=1,
+    param_grid = {'x': [x_train],
+                    'nb_epoch': [50],
+                  'learning_rate': [0.1, 0.002, 0.0005],
+                  'batch_size': [10, 50, 100],
+                  'layer1_neurons': [5, 25, 50],
+                  'layer2_neurons': [5, 25, 50]}
+
+
+
+
+
+
+    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=4, verbose=1,
                                                 n_jobs=-1)
     # CV is defaulted to 5, used to calculate scores
 
@@ -380,6 +385,12 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     print("R Squared Value on test set")
     y_pred = grid_result.predict(x_test)
     print(sklearn.metrics.r2_score(y_test, y_pred))
+
+    eval = RegressionEvaluation(y_test, y_pred, "error in house prices", "a One Layer NN")
+    eval.residuals_histogram()
+    plt.show()
+    eval.report_table()
+    plt.show()
 
     return grid_result.best_params_ # Return the chosen hyper parameters
 
@@ -430,6 +441,8 @@ def plot_search_results(grid):
         e_1 = np.array(stds_test[best_index])
         if (i == 4):
             break
+        if (p == "learning_rate"):
+            ax[i].set_xscale('log')
         ax[i].errorbar(x, y_1, e_1, linestyle='--', marker='o')
         #ax[i].errorbar(x, y_2, e_2, linestyle='-', marker='^',label='train' )
         aoeu = ["Batch size", "Layer 1 neurons", "Layer 2 neurons", "Learning rate"]
@@ -458,7 +471,7 @@ def example_main():
     # This example trains on the whole available dataset. 
     # You probably want to separate some held-out data 
     # to make sure the model isn't overfitting
-    regressor = Regressor(x_train, nb_epoch=50)
+    regressor = Regressor(x_train, nb_epoch=1, learning_rate=0.002, layer1_neurons=50)
     regressor.fit(x_train, y_train)
     #save_regressor(regressor)
 
