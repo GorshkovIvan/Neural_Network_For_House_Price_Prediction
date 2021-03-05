@@ -12,6 +12,7 @@ import random
 from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
+from mlplot.evaluation import RegressionEvaluation
 
 
 def include_dummies(x):
@@ -55,8 +56,12 @@ class Network(nn.Module):
 
 class Regressor():
 
+<<<<<<< HEAD
     def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=50,
                  layer2_neurons=50):
+=======
+    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=200, layer2_neurons=200):
+>>>>>>> 2582a626ed5b418aeb28234fc83d09f090ec41d5
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -80,7 +85,7 @@ class Regressor():
         self.input_size = X.shape[1]
         self.output_size = 1
         self.hiddenLayer1_size = layer1_neurons  # we set this ourselves
-        self.hiddenLayer2_size = layer2_neurons # we set this ourselves
+        self.hiddenLayer2_size = layer2_neurons
 
         self.model = None
         self.prev_model = None
@@ -326,25 +331,128 @@ def RegressorHyperParameterSearch(model, x_train, y_train, x_test, y_test):
     #######################################################################
     #                       ** START OF YOUR CODE **
     #######################################################################
+<<<<<<< HEAD
 
     param_grid = {'x': [x_train],
                   'nb_epoch': [50],
+=======
+    param_grid = {'x': [x_train],
+                  'nb_epoch': [1],
+                  'learning_rate': [0.002],
+                  'batch_size': [100],
+                  'layer1_neurons': [25],
+                  'layer2_neurons': [25]}
+
+    param_grid = {'x': [x_train],
+                    'nb_epoch': [50],
+>>>>>>> 2582a626ed5b418aeb28234fc83d09f090ec41d5
                   'learning_rate': [0.1, 0.002, 0.0005],
                   'batch_size': [10, 50, 100],
                   'layer1_neurons': [5, 25, 50],
                   'layer2_neurons': [5, 25, 50]}
+<<<<<<< HEAD
 
     grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=4, n_jobs=-1)
+=======
+
+
+
+
+
+
+    grid = sklearn.model_selection.GridSearchCV(model, param_grid, refit=True, cv=4, verbose=1,
+                                                n_jobs=-1)
+    # CV is defaulted to 5, used to calculate scores
+>>>>>>> 2582a626ed5b418aeb28234fc83d09f090ec41d5
 
     # fitting the model for grid search
     grid_result = grid.fit(x_train, y_train)
 
+<<<<<<< HEAD
     return grid_result.best_params_
+=======
+    # plot results
+    plot_search_results(grid_result)
+
+    print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+    # predicting x_test using the best scoring model
+
+    MSE = grid_result.score(x_test, y_test)
+    print("Mean Squared Error on test set")
+    print(MSE)
+    print("R Squared Value on test set")
+    y_pred = grid_result.predict(x_test)
+    print(sklearn.metrics.r2_score(y_test, y_pred))
+
+    eval = RegressionEvaluation(y_test, y_pred, "error in house prices", "a One Layer NN")
+    eval.residuals_histogram()
+    plt.show()
+    eval.report_table()
+    plt.show()
+
+    return grid_result.best_params_ # Return the chosen hyper parameters
+>>>>>>> 2582a626ed5b418aeb28234fc83d09f090ec41d5
 
     #######################################################################
     #                       ** END OF YOUR CODE **
     #######################################################################
 
+<<<<<<< HEAD
+=======
+def plot_search_results(grid):
+    """
+    Params:
+        grid: A trained GridSearchCV object.
+    """
+    ## Results from grid search
+    results = grid.cv_results_
+    print(results.keys())
+
+    means_test = results['mean_test_score']
+    stds_test = results['std_test_score']
+    #means_train = results['mean_train_score']
+    #stds_train = results['std_train_score']
+
+    ## Getting indexes of values per hyper-parameter
+    masks=[]
+    masks_names= list(grid.best_params_.keys())
+    masks_names.remove("x")
+    #masks_names.remove("nb_epochs")
+
+    print(grid.best_params_.keys())
+    print(grid.best_params_.items())
+
+    for p_k, p_v in grid.best_params_.items():
+        if p_k != "x":
+            masks.append(list(results['param_'+p_k].data==p_v))
+
+
+
+    params=grid.param_grid
+
+    # Plotting results
+    fig, ax = plt.subplots(1,len(params) - 2,sharex='none', sharey='all',figsize=(20,5))
+    fig.text(0.09, 0.5, 'Mean Score', va='center', rotation='vertical')
+    for i, p in enumerate(masks_names):
+        m = np.stack(masks[:i] + masks[i+1:])
+        best_parms_mask = m.all(axis=0)
+        best_index = np.where(best_parms_mask)[0]
+        x = np.array(params[p])
+        y_1 = np.array(means_test[best_index])
+        e_1 = np.array(stds_test[best_index])
+        if (i == 4):
+            break
+        if (p == "learning_rate"):
+            ax[i].set_xscale('log')
+        ax[i].errorbar(x, y_1, e_1, linestyle='--', marker='o')
+        #ax[i].errorbar(x, y_2, e_2, linestyle='-', marker='^',label='train' )
+        aoeu = ["Batch size", "Layer 1 neurons", "Layer 2 neurons", "Learning rate"]
+        ax[i].set_xlabel(aoeu[i])
+
+    plt.legend()
+    plt.show()
+
+>>>>>>> 2582a626ed5b418aeb28234fc83d09f090ec41d5
 
 def example_main():
     output_label = "median_house_value"
@@ -361,8 +469,16 @@ def example_main():
     # Splitting dataset into train and test sets
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1, random_state=3, shuffle=True)
 
+<<<<<<< HEAD
     # Training the regressor only on the training dataset
     regressor = Regressor(x_train, nb_epoch=10)
+=======
+    # Training
+    # This example trains on the whole available dataset. 
+    # You probably want to separate some held-out data 
+    # to make sure the model isn't overfitting
+    regressor = Regressor(x_train, nb_epoch=1, learning_rate=0.002, layer1_neurons=50)
+>>>>>>> 2582a626ed5b418aeb28234fc83d09f090ec41d5
     regressor.fit(x_train, y_train)
     save_regressor(regressor)
 
