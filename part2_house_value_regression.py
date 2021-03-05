@@ -53,8 +53,8 @@ class Network(nn.Module):
 
 class Regressor():
 
-    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=50,
-                 layer2_neurons=50):
+    def __init__(self, x, nb_epoch=30, learning_rate=0.002, batch_size=100, layer1_neurons=200,
+                 layer2_neurons=200):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """
@@ -185,11 +185,11 @@ class Regressor():
             score_list.append(current_score)
             if current_score < previous_score:
                 loss_list.append(loss_list[-1])
-                #self.model = self.prev_model
+                self.model = self.prev_model
                 break
 
             previous_score = current_score
-            #self.prev_model = self.model
+            self.prev_model = self.model
             for i, (inputs, labels) in enumerate(train_loader, 0):
                 # Forward pass
                 optimiser.zero_grad()
